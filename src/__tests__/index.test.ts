@@ -36,6 +36,20 @@ describe('openAR on iOS', () => {
     expect(mockOpenAR).toHaveBeenCalledWith('file:///models/model.usdz');
   });
 
+  it('rejects with E_INVALID_SOURCE for plain http usdz urls', async () => {
+    await expect(
+      openAR({ usdz: 'http://example.com/model.usdz' })
+    ).rejects.toMatchObject({ code: ErrorCodes.INVALID_SOURCE });
+    expect(mockOpenAR).not.toHaveBeenCalled();
+  });
+
+  it('rejects with E_INVALID_SOURCE for unknown usdz schemes', async () => {
+    await expect(
+      openAR({ usdz: 'ftp://example.com/model.usdz' })
+    ).rejects.toMatchObject({ code: ErrorCodes.INVALID_SOURCE });
+    expect(mockOpenAR).not.toHaveBeenCalled();
+  });
+
   it('rejects with E_INVALID_SOURCE when usdz is missing', async () => {
     await expect(
       openAR({ glb: 'https://example.com/model.glb' })

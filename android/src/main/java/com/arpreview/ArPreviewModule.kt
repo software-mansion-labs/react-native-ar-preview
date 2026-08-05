@@ -9,7 +9,7 @@ class ArPreviewModule(reactContext: ReactApplicationContext) :
   NativeArPreviewSpec(reactContext) {
 
   override fun isARAvailable(promise: Promise) {
-    val intent = buildSceneViewerIntent("https://example.com/model.glb")
+    val intent = buildSceneViewerIntent(PROBE_MODEL_URL)
     val resolved = intent.resolveActivity(reactApplicationContext.packageManager)
     promise.resolve(resolved != null)
   }
@@ -49,5 +49,6 @@ class ArPreviewModule(reactContext: ReactApplicationContext) :
     const val NAME = NativeArPreviewSpec.NAME
     private const val E_AR_UNAVAILABLE = "E_AR_UNAVAILABLE"
     private const val E_LAUNCH_FAILED = "E_LAUNCH_FAILED"
+    private const val PROBE_MODEL_URL = "https://example.com/probe.glb"
   }
 }

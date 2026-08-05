@@ -4,6 +4,7 @@
 #import <CommonCrypto/CommonDigest.h>
 #import <React/RCTUtils.h>
 
+static NSString *const kErrorInvalidSource = @"E_INVALID_SOURCE";
 static NSString *const kErrorDownloadFailed = @"E_DOWNLOAD_FAILED";
 static NSString *const kErrorLaunchFailed = @"E_LAUNCH_FAILED";
 
@@ -23,7 +24,7 @@ static NSString *const kErrorLaunchFailed = @"E_LAUNCH_FAILED";
 {
   NSURL *sourceUrl = [NSURL URLWithString:url];
   if (sourceUrl == nil) {
-    reject(kErrorLaunchFailed, [NSString stringWithFormat:@"Invalid url: %@", url], nil);
+    reject(kErrorInvalidSource, [NSString stringWithFormat:@"Invalid url: %@", url], nil);
     return;
   }
   if (sourceUrl.isFileURL) {
@@ -73,6 +74,10 @@ static NSString *const kErrorLaunchFailed = @"E_LAUNCH_FAILED";
                reject:(RCTPromiseRejectBlock)reject
 {
   dispatch_async(dispatch_get_main_queue(), ^{
+    if (self->_presentedItemUrl != nil) {
+      reject(kErrorLaunchFailed, @"An AR preview is already being presented", nil);
+      return;
+    }
     UIViewController *presenter = RCTPresentedViewController();
     if (presenter == nil) {
       reject(kErrorLaunchFailed, @"No view controller available to present from", nil);

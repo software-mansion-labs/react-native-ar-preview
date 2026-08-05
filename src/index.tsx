@@ -15,7 +15,7 @@ export const ErrorCodes = {
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];
 
-const reject = (code: ErrorCode, message: string): Promise<never> => {
+const rejectWithCode = (code: ErrorCode, message: string): Promise<never> => {
   const error = new Error(message) as Error & { code: ErrorCode };
   error.code = code;
   return Promise.reject(error);
@@ -24,29 +24,38 @@ const reject = (code: ErrorCode, message: string): Promise<never> => {
 const selectUrl = (source: ModelSource): Promise<string> => {
   if (Platform.OS === 'ios') {
     if (!source.usdz) {
-      return reject(
+      return rejectWithCode(
         ErrorCodes.INVALID_SOURCE,
         'iOS requires a `usdz` url in the model source'
+      );
+    }
+    if (
+      !source.usdz.startsWith('https://') &&
+      !source.usdz.startsWith('file://')
+    ) {
+      return rejectWithCode(
+        ErrorCodes.INVALID_SOURCE,
+        'The `usdz` url must use the https or file scheme'
       );
     }
     return Promise.resolve(source.usdz);
   }
   if (Platform.OS === 'android') {
     if (!source.glb) {
-      return reject(
+      return rejectWithCode(
         ErrorCodes.INVALID_SOURCE,
         'Android requires a `glb` url in the model source'
       );
     }
     if (!source.glb.startsWith('https://')) {
-      return reject(
+      return rejectWithCode(
         ErrorCodes.INVALID_SOURCE,
         'Scene Viewer requires the `glb` url to be served over https'
       );
     }
     return Promise.resolve(source.glb);
   }
-  return reject(
+  return rejectWithCode(
     ErrorCodes.AR_UNAVAILABLE,
     `AR preview is not available on ${Platform.OS}`
   );

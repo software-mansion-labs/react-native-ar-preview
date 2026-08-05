@@ -21,8 +21,7 @@ runtime dependencies.
   prebuild` / `expo run`). Not compatible with Expo Go, since it ships
   native code.
 - **iOS**: a device with ARKit support for the AR mode (Quick Look falls
-  back to a 3D object view otherwise). The app must declare
-  `NSCameraUsageDescription` in its `Info.plist`.
+  back to a 3D object view otherwise).
 - **Android**: [Google Play Services for AR](https://play.google.com/store/apps/details?id=com.google.ar.core)
   installed on the device, and the GLB model reachable over **HTTPS**
   (Scene Viewer downloads it itself; local files are not supported).

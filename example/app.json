@@ -13,10 +13,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "arpreview.example",
-      "infoPlist": {
-        "NSCameraUsageDescription": "The camera is used to show 3D models in augmented reality."
-      }
+      "bundleIdentifier": "arpreview.example"
     },
     "android": {
       "adaptiveIcon": {
