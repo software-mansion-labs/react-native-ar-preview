@@ -36,12 +36,22 @@
     "clean": "del-cli lib",
     "prepare": "bob build",
     "typecheck": "tsc",
+    "test": "jest",
     "lint": "eslint \"**/*.{js,ts,tsx}\""
   },
   "keywords": [
     "react-native",
     "ios",
-    "android"
+    "android",
+    "ar",
+    "augmented-reality",
+    "quick-look",
+    "scene-viewer",
+    "usdz",
+    "glb",
+    "model-viewer",
+    "arkit",
+    "arcore"
   ],
   "repository": {
     "type": "git",
@@ -62,22 +72,33 @@
     "@eslint/js": "^10.0.1",
     "@react-native/babel-preset": "0.85.0",
     "@react-native/eslint-config": "0.85.0",
+    "@types/jest": "^30.0.0",
     "@types/react": "^19.2.0",
+    "@types/react-test-renderer": "^19",
     "del-cli": "^7.0.0",
     "eslint": "^9.39.4",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-ft-flow": "^3.0.11",
     "eslint-plugin-prettier": "^5.5.6",
+    "jest": "^30.4.2",
     "prettier": "^3.8.3",
     "react": "19.2.0",
     "react-native": "0.83.10",
     "react-native-builder-bob": "^0.43.0",
+    "react-test-renderer": "19.2.0",
     "turbo": "^2.9.16",
     "typescript": "^6.0.3"
   },
   "peerDependencies": {
     "react": "*",
-    "react-native": "*"
+    "react-native": ">=0.76.0"
+  },
+  "jest": {
+    "preset": "react-native",
+    "modulePathIgnorePatterns": [
+      "<rootDir>/lib/",
+      "<rootDir>/example/"
+    ]
   },
   "workspaces": [
     "example"
