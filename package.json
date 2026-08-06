@@ -35,8 +35,10 @@
     "example": "yarn workspace example",
     "clean": "del-cli lib",
     "prepare": "bob build",
-    "typecheck": "tsc",
+    "typecheck": "tsc && yarn workspace example tsc --noEmit",
     "test": "jest",
+    "test:ios": "cd ios && xcodebuild test -scheme ArPreviewImpl-Package -destination 'platform=iOS Simulator,name=iPhone 16 Pro'",
+    "test:android": "cd example/android && ./gradlew :react-native-ar-preview:testDebugUnitTest",
     "lint": "eslint \"**/*.{js,ts,tsx}\""
   },
   "keywords": [
