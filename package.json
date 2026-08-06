@@ -32,7 +32,7 @@
     "!**/.*"
   ],
   "scripts": {
-    "example": "yarn workspace react-native-ar-preview-example",
+    "example": "yarn workspace example",
     "clean": "del-cli lib",
     "prepare": "bob build",
     "typecheck": "tsc",

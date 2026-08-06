@@ -1,12 +1,12 @@
 # react-native-ar-preview
 
-View 3D models in the native AR viewer from React Native — the mobile
+View 3D models in the native AR viewer from React Native - the mobile
 equivalent of [`<model-viewer>`](https://modelviewer.dev)'s "View in AR"
 button.
 
-- **iOS** — presents [AR Quick Look](https://developer.apple.com/augmented-reality/quick-look/)
+- **iOS** - presents [AR Quick Look](https://developer.apple.com/augmented-reality/quick-look/)
   (`QLPreviewController`) with a USDZ model
-- **Android** — launches [Scene Viewer](https://developers.google.com/ar/develop/scene-viewer)
+- **Android** - launches [Scene Viewer](https://developers.google.com/ar/develop/scene-viewer)
   with a GLB model
 
 The library deliberately does nothing else: no embedded AR view, no 3D
@@ -18,7 +18,7 @@ runtime dependencies.
 - React Native **0.76+** with the **New Architecture** enabled (the default
   since 0.76). The old architecture is not supported.
 - Works in bare React Native and in Expo **development builds** (`expo
-  prebuild` / `expo run`). Not compatible with Expo Go, since it ships
+prebuild` / `expo run`). Not compatible with Expo Go, since it ships
   native code.
 - **iOS**: a device with ARKit support for the AR mode (Quick Look falls
   back to a 3D object view otherwise).
@@ -65,7 +65,7 @@ const available = await isARAvailable();
 ### `openAR(source: ModelSource): Promise<void>`
 
 Opens the platform's system AR viewer for the given model. The promise
-**resolves once the viewer has been presented** — dismissal is not
+**resolves once the viewer has been presented** - dismissal is not
 reported (Scene Viewer runs in a separate activity and returns no result,
 so a cross-platform dismissal signal would be a lie).
 
@@ -76,10 +76,10 @@ type ModelSource = {
 };
 ```
 
-- `usdz` — used on iOS. Remote `https://` URLs are downloaded and cached
-  automatically (in `Caches/`, keyed by URL — version your URLs to bust
+- `usdz` - used on iOS. Remote `https://` URLs are downloaded and cached
+  automatically (in `Caches/`, keyed by URL - version your URLs to bust
   the cache). `file://` URLs are opened directly.
-- `glb` — used on Android. Must be an `https://` URL; Scene Viewer
+- `glb` - used on Android. Must be an `https://` URL; Scene Viewer
   fetches it itself and cannot open local files.
 
 A source may carry only one format; calling `openAR` on a platform whose
@@ -90,9 +90,9 @@ Viewer but without AR support still get the 3D fallback view.
 
 ### `isARAvailable(): Promise<boolean>`
 
-- **iOS** — whether the device supports ARKit world tracking.
-- **Android** — whether the Scene Viewer intent can be resolved.
-- Any other platform — `false`.
+- **iOS** - whether the device supports ARKit world tracking.
+- **Android** - whether the Scene Viewer intent can be resolved.
+- Any other platform - `false`.
 
 ### `ErrorCodes`
 
@@ -107,8 +107,8 @@ Rejections carry a `code` property with one of these stable values:
 
 ## Model formats
 
-Each platform consumes its own format — exactly like `<model-viewer>`'s
-`src` / `ios-src` pair — so ship every model twice:
+Each platform consumes its own format - exactly like `<model-viewer>`'s
+`src` / `ios-src` pair - so ship every model twice:
 
 | Platform | Format | Notes                                        |
 | -------- | ------ | -------------------------------------------- |
