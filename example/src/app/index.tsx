@@ -1,34 +1,36 @@
-import { useEffect, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
-import { isARAvailable, openAR, type ErrorCode } from 'react-native-ar-preview';
+import { Alert, StyleSheet, Text, View } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { openAR, type ErrorCode } from 'react-native-ar-preview';
 
-const MODEL = {
-  usdz: 'https://modelviewer.dev/shared-assets/models/Astronaut.usdz',
-  glb: 'https://modelviewer.dev/shared-assets/models/Astronaut.glb',
-};
+import { ModelCard } from '../components/ModelCard';
+import { SwmLogo } from '../components/SwmLogo';
+import { MONO } from '../consts';
+import { MODEL } from '../models';
 
 const Index = () => {
-  const [available, setAvailable] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    isARAvailable().then(setAvailable);
-  }, []);
+  const insets = useSafeAreaInsets();
 
   const handleOpenAR = () => {
-    openAR(MODEL).catch((error: Error & { code?: ErrorCode }) => {
+    openAR(MODEL.source).catch((error: Error & { code?: ErrorCode }) => {
       Alert.alert('AR error', `${error.code ?? 'unknown'}: ${error.message}`);
     });
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.status}>
-        AR available:{' '}
-        {available === null ? 'checking…' : available ? 'yes' : 'no'}
-      </Text>
-      <Pressable style={styles.button} onPress={handleOpenAR}>
-        <Text style={styles.buttonLabel}>View in AR</Text>
-      </Pressable>
+    <View style={[styles.screen, { paddingTop: insets.top + 8 }]}>
+      <StatusBar style="dark" />
+      <View style={styles.header}>
+        <SwmLogo />
+        <View>
+          <Text style={styles.title}>AR Preview</Text>
+          <Text style={styles.subtitle}>react-native-ar-preview</Text>
+        </View>
+      </View>
+      <View style={styles.divider} />
+      <View style={styles.content}>
+        <ModelCard model={MODEL} onPress={handleOpenAR} />
+      </View>
     </View>
   );
 };
@@ -36,24 +38,35 @@ const Index = () => {
 export default Index;
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
+    backgroundColor: '#ffffff',
+    paddingHorizontal: 20,
+  },
+  header: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     gap: 16,
+    paddingVertical: 14,
   },
-  status: {
-    fontSize: 16,
-  },
-  button: {
-    backgroundColor: '#1e40af',
-    borderRadius: 8,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-  },
-  buttonLabel: {
-    color: '#fff',
-    fontSize: 16,
+  title: {
+    fontSize: 17,
     fontWeight: '600',
+    color: '#111111',
+  },
+  subtitle: {
+    fontSize: 11,
+    fontFamily: MONO,
+    color: '#6e6e6e',
+    marginTop: 2,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#e7e7e7',
+    marginHorizontal: -20,
+  },
+  content: {
+    flex: 1,
+    paddingTop: 20,
   },
 });
