@@ -5,7 +5,40 @@ import QuickLook
 import UIKit
 
 @objc public class ArPreviewImpl: NSObject {
+  private let session: URLSession
+  private let cacheDirectory: URL
+  private let presenterProvider: () -> UIViewController?
+  private let retryScheduler: (TimeInterval, @escaping () -> Void) -> Void
+  private let controllerFactory: () -> QLPreviewController
+
   private var presentedItemUrl: URL?
+  private weak var presentedController: QLPreviewController?
+
+  @objc public override convenience init() {
+    self.init(
+      session: .shared,
+      cacheDirectory: FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0],
+      presenterProvider: ArPreviewImpl.topViewController,
+      retryScheduler: { delay, work in
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: work)
+      },
+      controllerFactory: { QLPreviewController() }
+    )
+  }
+
+  public init(
+    session: URLSession,
+    cacheDirectory: URL,
+    presenterProvider: @escaping () -> UIViewController?,
+    retryScheduler: @escaping (TimeInterval, @escaping () -> Void) -> Void,
+    controllerFactory: @escaping () -> QLPreviewController
+  ) {
+    self.session = session
+    self.cacheDirectory = cacheDirectory
+    self.presenterProvider = presenterProvider
+    self.retryScheduler = retryScheduler
+    self.controllerFactory = controllerFactory
+  }
 
   @objc public func isARAvailable() -> Bool {
     ARWorldTrackingConfiguration.isSupported
@@ -29,7 +62,7 @@ import UIKit
       present(itemAt: cachedUrl, resolve: resolve, reject: reject)
       return
     }
-    let task = URLSession.shared.downloadTask(with: sourceUrl) { location, response, error in
+    let task = session.downloadTask(with: sourceUrl) { location, response, error in
       if let error {
         reject("E_DOWNLOAD_FAILED", error.localizedDescription)
         return
@@ -41,6 +74,10 @@ import UIKit
       }
       guard let location else {
         reject("E_DOWNLOAD_FAILED", "Download produced no file")
+        return
+      }
+      guard ArPreviewImpl.hasZipMagicBytes(at: location) else {
+        reject("E_DOWNLOAD_FAILED", "Downloaded file is not a valid USDZ model")
         return
       }
       do {
@@ -65,25 +102,52 @@ import UIKit
     reject: @escaping (String, String) -> Void
   ) {
     DispatchQueue.main.async {
-      if self.presentedItemUrl != nil {
-        reject("E_LAUNCH_FAILED", "An AR preview is already being presented")
-        return
-      }
-      guard let presenter = self.topViewController() else {
-        reject("E_LAUNCH_FAILED", "No view controller available to present from")
-        return
-      }
-      self.presentedItemUrl = itemUrl
-      let controller = QLPreviewController()
-      controller.dataSource = self
-      controller.delegate = self
-      presenter.present(controller, animated: true) {
-        resolve()
-      }
+      self.attemptPresentation(of: itemUrl, retriesLeft: 40, resolve: resolve, reject: reject)
     }
   }
 
-  private func topViewController() -> UIViewController? {
+  private func attemptPresentation(
+    of itemUrl: URL,
+    retriesLeft: Int,
+    resolve: @escaping () -> Void,
+    reject: @escaping (String, String) -> Void
+  ) {
+    if let existing = presentedController {
+      if existing.isBeingDismissed {
+        if retriesLeft == 0 {
+          reject("E_LAUNCH_FAILED", "Timed out waiting for the previous AR preview to dismiss")
+          return
+        }
+        retryScheduler(0.05) {
+          self.attemptPresentation(
+            of: itemUrl,
+            retriesLeft: retriesLeft - 1,
+            resolve: resolve,
+            reject: reject
+          )
+        }
+        return
+      }
+      if existing.presentingViewController != nil {
+        reject("E_LAUNCH_FAILED", "An AR preview is already being presented")
+        return
+      }
+    }
+    guard let presenter = presenterProvider() else {
+      reject("E_LAUNCH_FAILED", "No view controller available to present from")
+      return
+    }
+    presentedItemUrl = itemUrl
+    let controller = controllerFactory()
+    controller.dataSource = self
+    controller.delegate = self
+    presentedController = controller
+    presenter.present(controller, animated: true) {
+      resolve()
+    }
+  }
+
+  private static func topViewController() -> UIViewController? {
     let root = UIApplication.shared.connectedScenes
       .compactMap { $0 as? UIWindowScene }
       .flatMap { $0.windows }
@@ -96,13 +160,21 @@ import UIKit
     return top
   }
 
+  private static func hasZipMagicBytes(at url: URL) -> Bool {
+    guard let handle = try? FileHandle(forReadingFrom: url) else {
+      return false
+    }
+    defer { try? handle.close() }
+    let prefix = (try? handle.read(upToCount: 2)) ?? Data()
+    return prefix == Data([0x50, 0x4B])
+  }
+
   private func cacheLocation(for url: String) -> URL {
     let digest = SHA256.hash(data: Data(url.utf8))
     let hash = digest.map { String(format: "%02x", $0) }.joined()
     let ext = URL(string: url)?.pathExtension ?? ""
     let fileName = ext.isEmpty ? "\(hash).usdz" : "\(hash).\(ext)"
-    let cachesDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
-    return cachesDir.appendingPathComponent("ar-preview").appendingPathComponent(fileName)
+    return cacheDirectory.appendingPathComponent("ar-preview").appendingPathComponent(fileName)
   }
 }
 

@@ -101,7 +101,7 @@ Rejections carry a `code` property with one of these stable values:
 | Code                | Meaning                                                                  |
 | ------------------- | ------------------------------------------------------------------------ |
 | `E_INVALID_SOURCE`  | No format for the current platform, or a non-HTTPS `glb` URL on Android. |
-| `E_DOWNLOAD_FAILED` | iOS could not download the USDZ file (network error, non-2xx status).    |
+| `E_DOWNLOAD_FAILED` | iOS could not download a usable USDZ file (network error, non-2xx status, or a response body that is not a USDZ archive). Nothing is cached in this case. |
 | `E_AR_UNAVAILABLE`  | No system AR viewer on this device, or an unsupported platform.          |
 | `E_LAUNCH_FAILED`   | The viewer could not be presented for another reason.                    |
 
