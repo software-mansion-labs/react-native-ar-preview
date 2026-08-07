@@ -1,56 +1,31 @@
-# Welcome to your Expo app 👋
+# react-native-ar-preview example
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+An Expo app (SDK 57, expo-router) demonstrating
+[react-native-ar-preview](../README.md): a gallery of sample 3D models,
+each opening in the platform's native AR viewer - AR Quick Look on iOS,
+Scene Viewer on Android.
 
-## Get started
+## Running it
 
-1. Install dependencies
+AR needs real camera and motion sensors, so run on a **physical device**
+(simulators fall back to the non-AR 3D object view at best). The library
+ships native code, so the app must be a development build - it will not
+work in Expo Go.
 
-   ```bash
-   npm install
-   ```
+From the repository root:
 
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```sh
+yarn
+yarn example ios --device
+yarn example android --device
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+On Android the device also needs
+[Google Play Services for AR](https://play.google.com/store/apps/details?id=com.google.ar.core)
+installed.
 
-### Other setup steps
+## What to look at
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- [`src/app/index.tsx`](./src/app/index.tsx) - the model gallery screen; shows calling `openAR()` and handling its error codes.
+- [`src/models.ts`](./src/models.ts) - sample models with the USDZ/GLB URL pair each platform needs.
+- [`src/components/ModelCard.tsx`](./src/components/ModelCard.tsx) - the "View in AR" entry point per model.
