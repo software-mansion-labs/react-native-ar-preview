@@ -19,6 +19,7 @@ import org.mockito.ArgumentMatchers.anyInt
 import org.mockito.Mockito.doThrow
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.never
+import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.robolectric.RobolectricTestRunner
@@ -131,6 +132,48 @@ class SceneViewerLauncherTest {
     assertEquals("Scene Viewer disappeared", failedMessage)
     assertEquals(boom, failedError)
     assertEquals(0, launchedCount)
+  }
+
+  @Test
+  fun `second launch while scene viewer is open is a silent no-op`() {
+    stubSceneViewerInstalled(true)
+    val launcher = makeLauncher()
+
+    launch(launcher)
+    launch(launcher)
+
+    verify(activity, times(1)).startActivity(any(Intent::class.java))
+    assertEquals(2, launchedCount)
+    assertNull(failedCode)
+  }
+
+  @Test
+  fun `launch works again after the host resumes`() {
+    stubSceneViewerInstalled(true)
+    val launcher = makeLauncher()
+
+    launch(launcher)
+    launcher.notifyHostResumed()
+    launch(launcher)
+
+    verify(activity, times(2)).startActivity(any(Intent::class.java))
+    assertEquals(2, launchedCount)
+    assertNull(failedCode)
+  }
+
+  @Test
+  fun `failed launch does not block the next attempt`() {
+    stubSceneViewerInstalled(true)
+    val boom = ActivityNotFoundException("Scene Viewer disappeared")
+    doThrow(boom).`when`(activity).startActivity(any(Intent::class.java))
+    val launcher = makeLauncher()
+    launch(launcher)
+
+    org.mockito.Mockito.reset(activity)
+    launch(launcher)
+
+    verify(activity, times(1)).startActivity(any(Intent::class.java))
+    assertEquals(1, launchedCount)
   }
 
   companion object {

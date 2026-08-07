@@ -10,14 +10,24 @@ class SceneViewerLauncher(
   private val activityProvider: () -> Activity?
 ) {
 
+  private var launchInFlight = false
+
   fun isAvailable(): Boolean =
     buildIntent(PROBE_MODEL_URL).resolveActivity(packageManager) != null
+
+  fun notifyHostResumed() {
+    launchInFlight = false
+  }
 
   fun launch(
     url: String,
     onLaunched: () -> Unit,
     onFailed: (code: String, message: String?, error: Throwable?) -> Unit
   ) {
+    if (launchInFlight) {
+      onLaunched()
+      return
+    }
     val activity = activityProvider()
     if (activity == null) {
       onFailed(E_LAUNCH_FAILED, "No activity available to launch from", null)
@@ -30,6 +40,7 @@ class SceneViewerLauncher(
     }
     try {
       activity.startActivity(intent)
+      launchInFlight = true
       onLaunched()
     } catch (error: Exception) {
       onFailed(E_LAUNCH_FAILED, error.message, error)

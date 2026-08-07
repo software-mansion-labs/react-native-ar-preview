@@ -1,12 +1,30 @@
 package com.arpreview
 
+import com.facebook.react.bridge.LifecycleEventListener
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 
 class ArPreviewModule(reactContext: ReactApplicationContext) :
-  NativeArPreviewSpec(reactContext) {
+  NativeArPreviewSpec(reactContext), LifecycleEventListener {
 
   private val launcher = SceneViewerLauncher(reactContext.packageManager) { currentActivity }
+
+  init {
+    reactContext.addLifecycleEventListener(this)
+  }
+
+  override fun onHostResume() {
+    launcher.notifyHostResumed()
+  }
+
+  override fun onHostPause() = Unit
+
+  override fun onHostDestroy() = Unit
+
+  override fun invalidate() {
+    reactApplicationContext.removeLifecycleEventListener(this)
+    super.invalidate()
+  }
 
   override fun isARAvailable(promise: Promise) {
     promise.resolve(launcher.isAvailable())
