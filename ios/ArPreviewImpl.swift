@@ -12,6 +12,8 @@ import UIKit
   private let controllerFactory: () -> QLPreviewController
 
   private var presentedItemUrl: URL?
+  private var presentedScale: String?
+  private var presentedLink: String?
   private weak var presentedController: QLPreviewController?
   private let openLock = NSLock()
   private var isOpening = false
@@ -48,6 +50,16 @@ import UIKit
 
   @objc public func openAR(
     _ url: String,
+    resolve: @escaping () -> Void,
+    reject: @escaping (String, String) -> Void
+  ) {
+    openAR(url, scale: nil, link: nil, resolve: resolve, reject: reject)
+  }
+
+  @objc public func openAR(
+    _ url: String,
+    scale: String?,
+    link: String?,
     resolve rawResolve: @escaping () -> Void,
     reject rawReject: @escaping (String, String) -> Void
   ) {
@@ -68,12 +80,12 @@ import UIKit
       return
     }
     if sourceUrl.isFileURL {
-      present(itemAt: sourceUrl, resolve: resolve, reject: reject)
+      present(itemAt: sourceUrl, scale: scale, link: link, resolve: resolve, reject: reject)
       return
     }
     let cachedUrl = cacheLocation(for: url)
     if FileManager.default.fileExists(atPath: cachedUrl.path) {
-      present(itemAt: cachedUrl, resolve: resolve, reject: reject)
+      present(itemAt: cachedUrl, scale: scale, link: link, resolve: resolve, reject: reject)
       return
     }
     let task = session.downloadTask(with: sourceUrl) { location, response, error in
@@ -105,7 +117,7 @@ import UIKit
         reject("E_DOWNLOAD_FAILED", error.localizedDescription)
         return
       }
-      self.present(itemAt: cachedUrl, resolve: resolve, reject: reject)
+      self.present(itemAt: cachedUrl, scale: scale, link: link, resolve: resolve, reject: reject)
     }
     task.resume()
   }
@@ -128,16 +140,27 @@ import UIKit
 
   private func present(
     itemAt itemUrl: URL,
+    scale: String?,
+    link: String?,
     resolve: @escaping () -> Void,
     reject: @escaping (String, String) -> Void
   ) {
     DispatchQueue.main.async {
-      self.attemptPresentation(of: itemUrl, retriesLeft: 40, resolve: resolve, reject: reject)
+      self.attemptPresentation(
+        of: itemUrl,
+        scale: scale,
+        link: link,
+        retriesLeft: 40,
+        resolve: resolve,
+        reject: reject
+      )
     }
   }
 
   private func attemptPresentation(
     of itemUrl: URL,
+    scale: String?,
+    link: String?,
     retriesLeft: Int,
     resolve: @escaping () -> Void,
     reject: @escaping (String, String) -> Void
@@ -151,6 +174,8 @@ import UIKit
         retryScheduler(0.05) {
           self.attemptPresentation(
             of: itemUrl,
+            scale: scale,
+            link: link,
             retriesLeft: retriesLeft - 1,
             resolve: resolve,
             reject: reject
@@ -168,6 +193,8 @@ import UIKit
       return
     }
     presentedItemUrl = itemUrl
+    presentedScale = scale
+    presentedLink = link
     let controller = controllerFactory()
     controller.dataSource = self
     controller.delegate = self
@@ -217,10 +244,20 @@ extension ArPreviewImpl: QLPreviewControllerDataSource, QLPreviewControllerDeleg
     _ controller: QLPreviewController,
     previewItemAt index: Int
   ) -> QLPreviewItem {
-    (presentedItemUrl ?? URL(fileURLWithPath: "")) as NSURL
+    guard let itemUrl = presentedItemUrl else {
+      return URL(fileURLWithPath: "") as NSURL
+    }
+    let item = ARQuickLookPreviewItem(fileAt: itemUrl)
+    item.allowsContentScaling = presentedScale != "fixed"
+    if let link = presentedLink {
+      item.canonicalWebPageURL = URL(string: link)
+    }
+    return item
   }
 
   public func previewControllerDidDismiss(_ controller: QLPreviewController) {
     presentedItemUrl = nil
+    presentedScale = nil
+    presentedLink = nil
   }
 }
