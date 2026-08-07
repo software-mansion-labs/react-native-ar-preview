@@ -3,44 +3,51 @@ import NativeArPreview from './NativeArPreview';
 
 type ModelFormats = {
   /**
-   * The model for iOS, shown in AR Quick Look.
-   * `https://` URLs are downloaded, validated as USDZ, and cached on the
-   * device (keyed by URL - change the URL when the model changes).
-   * `file://` URLs open directly.
+   * The model file for iOS, shown in AR Quick Look.
+   *
+   * - `https://` URL: downloaded, checked to be a real USDZ, and cached on
+   *   the device. The cache key is the URL - change the URL when the model
+   *   changes.
+   * - `file://` URL: opened directly.
    */
   usdz?: string;
   /**
-   * The model for Android, shown in Scene Viewer.
-   * Must be an `https://` URL - Scene Viewer downloads it itself and
-   * cannot open local files.
+   * The model file for Android, shown in Scene Viewer.
+   *
+   * Must be an `https://` URL. Scene Viewer downloads it itself and cannot
+   * open local files.
    */
   glb?: string;
 };
 
 /**
- * The model to preview, keyed by format. At least one format is required.
- * A source missing the format the current platform needs rejects with
+ * The model to preview, one URL per format. At least one format is
+ * required. If the current platform has no format, `openAR` rejects with
  * `E_INVALID_SOURCE`.
  */
 export type ModelSource = ModelFormats & ({ usdz: string } | { glb: string });
 
 /**
- * Cross-platform presentation options for the system AR viewer. Each
- * platform translates them into its own viewer parameters.
+ * Options for how the AR viewer presents the model. The same options work
+ * on both platforms.
  */
 export type ViewerOptions = {
   /**
-   * `'fixed'` locks the model to its real-world size, so the user cannot
-   * pinch-scale it in AR mode. `'auto'` (default) keeps the platform
-   * behavior. iOS: `allowsContentScaling`; Android: `resizable=false`.
+   * How the user may scale the model in AR mode. `'auto'` (default) allows
+   * pinch to scale; `'fixed'` keeps the model at its real-world size.
+   *
+   * - iOS: `allowsContentScaling`
+   * - Android: `resizable=false` in Scene Viewer
    */
   scale?: 'auto' | 'fixed';
   /**
-   * The product web page for this model. Must be an `https://` URL,
-   * otherwise `openAR` rejects with `E_INVALID_OPTIONS`.
-   * Android: shown as a tappable link in Scene Viewer. iOS: the Quick Look
-   * share sheet shares this page instead of the raw model file (broken on
-   * iOS 26 by an OS regression - google/model-viewer#4770).
+   * The web page of the shown product. Must be an `https://` URL -
+   * anything else rejects with `E_INVALID_OPTIONS`.
+   *
+   * - iOS: the Quick Look share sheet shares this page instead of the
+   *   model file. Broken on iOS 26 (Apple regression,
+   *   google/model-viewer#4770).
+   * - Android: Scene Viewer shows the link next to the model.
    */
   link?: string;
 };
@@ -116,13 +123,15 @@ const validateOptions = (options: ViewerOptions): Promise<ViewerOptions> => {
 };
 
 /**
- * Opens the system AR viewer for the given model - AR Quick Look on iOS,
- * Scene Viewer on Android.
+ * Opens the system AR viewer for the given model.
  *
- * Resolves once the viewer is on screen; closing the viewer is not
- * reported. Calling again while an earlier open is still in flight is a
- * silent no-op. Rejects with an `Error` carrying a `code` from
- * {@link ErrorCodes}.
+ * - iOS: AR Quick Look
+ * - Android: Scene Viewer
+ *
+ * Resolves when the viewer is on screen. Closing the viewer is not
+ * reported. A second call while one is already in flight resolves right
+ * away and does nothing. Rejects with an `Error` that carries a `code`
+ * from {@link ErrorCodes}.
  */
 export const openAR = (
   source: ModelSource,
@@ -138,9 +147,13 @@ export const openAR = (
   });
 
 /**
- * Whether this device can show an AR preview - ARKit world tracking on
- * iOS, a resolvable Scene Viewer on Android, always `false` elsewhere.
- * Use it to hide the AR button on devices that cannot show AR.
+ * Whether this device can show an AR preview.
+ *
+ * - iOS: the device supports ARKit world tracking.
+ * - Android: the Scene Viewer intent can be resolved.
+ * - Other platforms: always `false`.
+ *
+ * Use it to hide the AR button when AR is not available.
  */
 export const isARAvailable = (): Promise<boolean> => {
   if (Platform.OS !== 'ios' && Platform.OS !== 'android') {
