@@ -108,19 +108,26 @@ type ViewerOptions = {
 ```
 
 - `scale` - `'fixed'` locks the model to its real-world size, so the user
-  cannot pinch-scale it. Default `'auto'` keeps the platform behavior.
+  cannot pinch-scale it in AR mode. Default `'auto'` keeps the platform
+  behavior. (The object view outside AR always allows pinch - that is OS
+  behavior.)
 - `link` - the product web page for this model. Must be an `https://` URL.
-  On iOS the Quick Look share sheet then shares this page instead of the
-  raw model file.
+  Scene Viewer shows it as a tappable link next to the model; on iOS the
+  Quick Look share sheet shares this page instead of the raw model file.
 
-| Option  | iOS (Quick Look)                 | Android (Scene Viewer)  |
-| ------- | -------------------------------- | ----------------------- |
-| `scale` | ✅ 0.2.0 (`allowsContentScaling`) | Planned for 0.3.0       |
-| `link`  | ✅ 0.2.0 (`canonicalWebPageURL`)  | Planned for 0.3.0       |
+| Option  | iOS (Quick Look)              | Android (Scene Viewer) |
+| ------- | ----------------------------- | ---------------------- |
+| `scale` | ✅ (`allowsContentScaling`)    | ✅ (`resizable`)        |
+| `link`  | ✅ (`canonicalWebPageURL`) \*  | ✅ (`link`)             |
 
-An option that a platform does not support yet is silently ignored there -
-your call stays cross-platform. An invalid option value (for example a
-non-HTTPS `link`) rejects with `E_INVALID_OPTIONS` before anything opens.
+\* **Known iOS 26 issue:** iOS 26 ignores `canonicalWebPageURL` and shares
+the raw model file instead of the page
+([google/model-viewer#4770](https://github.com/google/model-viewer/issues/4770)).
+The option works on earlier iOS versions; no library can work around it.
+
+An option that a platform cannot express is silently ignored there - your
+call stays cross-platform. An invalid option value (for example a non-HTTPS
+`link`) rejects with `E_INVALID_OPTIONS` before anything opens.
 
 > **Note:** the Quick Look Apple Pay / custom-action banner is a Safari-only
 > feature driven by URL parameters. Native apps cannot show it, and this
