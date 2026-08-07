@@ -27,10 +27,14 @@
 }
 
 - (void)openAR:(NSString *)url
+         scale:(NSString *)scale
+          link:(NSString *)link
        resolve:(RCTPromiseResolveBlock)resolve
         reject:(RCTPromiseRejectBlock)reject
 {
   [_impl openAR:url
+          scale:scale
+           link:link
         resolve:^{
           resolve(nil);
         }

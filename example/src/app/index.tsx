@@ -11,10 +11,16 @@ import { MODEL } from '../models';
 const Index = () => {
   const insets = useSafeAreaInsets();
 
-  const handleOpenAR = () => {
-    openAR(MODEL.source).catch((error: Error & { code?: ErrorCode }) => {
-      Alert.alert('AR error', `${error.code ?? 'unknown'}: ${error.message}`);
-    });
+  const handleOpenAR = async () => {
+    try {
+      await openAR(MODEL.source, { link: 'https://swmansion.com/' });
+    } catch (error) {
+      const arError = error as Error & { code?: ErrorCode };
+      Alert.alert(
+        'AR error',
+        `${arError.code ?? 'unknown'}: ${arError.message}`
+      );
+    }
   };
 
   return (

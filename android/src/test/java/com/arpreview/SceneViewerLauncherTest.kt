@@ -77,6 +77,65 @@ class SceneViewerLauncherTest {
   }
 
   @Test
+  fun `fixed scale adds a resizable false parameter`() {
+    val intent = SceneViewerLauncher.buildIntent(MODEL_URL, "fixed", null)
+
+    assertEquals("false", intent.data?.getQueryParameter("resizable"))
+    assertNull(intent.data?.getQueryParameter("link"))
+  }
+
+  @Test
+  fun `auto scale leaves the resizable parameter out`() {
+    val intent = SceneViewerLauncher.buildIntent(MODEL_URL, "auto", null)
+
+    assertNull(intent.data?.getQueryParameter("resizable"))
+  }
+
+  @Test
+  fun `link is passed as a scene viewer parameter`() {
+    val intent = SceneViewerLauncher.buildIntent(MODEL_URL, null, PRODUCT_LINK)
+
+    assertEquals(PRODUCT_LINK, intent.data?.getQueryParameter("link"))
+    assertNull(intent.data?.getQueryParameter("resizable"))
+  }
+
+  @Test
+  fun `no options build the same intent as before`() {
+    val intent = SceneViewerLauncher.buildIntent(MODEL_URL)
+
+    assertNull(intent.data?.getQueryParameter("resizable"))
+    assertNull(intent.data?.getQueryParameter("link"))
+    assertEquals(MODEL_URL, intent.data?.getQueryParameter("file"))
+    assertEquals("ar_preferred", intent.data?.getQueryParameter("mode"))
+  }
+
+  @Test
+  fun `launch forwards the options into the started intent`() {
+    stubSceneViewerInstalled(true)
+    val launcher = makeLauncher()
+
+    launcher.launch(
+      MODEL_URL,
+      scale = "fixed",
+      link = PRODUCT_LINK,
+      onLaunched = { launchedCount += 1 },
+      onFailed = { code, message, error ->
+        failedCode = code
+        failedMessage = message
+        failedError = error
+      }
+    )
+
+    val captor = ArgumentCaptor.forClass(Intent::class.java)
+    verify(activity).startActivity(captor.capture())
+    assertEquals("false", captor.value.data?.getQueryParameter("resizable"))
+    assertEquals(PRODUCT_LINK, captor.value.data?.getQueryParameter("link"))
+    assertEquals(MODEL_URL, captor.value.data?.getQueryParameter("file"))
+    assertEquals(1, launchedCount)
+    assertNull(failedCode)
+  }
+
+  @Test
   fun `isAvailable reflects scene viewer resolution`() {
     stubSceneViewerInstalled(true)
     assertTrue(makeLauncher().isAvailable())
@@ -178,5 +237,6 @@ class SceneViewerLauncherTest {
 
   companion object {
     private const val MODEL_URL = "https://example.com/models/chair.glb"
+    private const val PRODUCT_LINK = "https://shop.example.com/chair"
   }
 }

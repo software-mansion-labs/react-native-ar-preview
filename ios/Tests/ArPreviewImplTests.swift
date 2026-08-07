@@ -1,3 +1,4 @@
+import ARKit
 import ArPreviewImpl
 import QuickLook
 import UIKit
@@ -296,6 +297,178 @@ final class ArPreviewImplTests: XCTestCase {
 
     impl.previewControllerDidDismiss(controller)
     XCTAssertEqual(impl.numberOfPreviewItems(in: controller), 0)
+  }
+}
+
+extension ArPreviewImplTests {
+  private func openAR(
+    _ impl: ArPreviewImpl,
+    url: String,
+    scale: String?,
+    link: String?,
+    timeout: TimeInterval = 5
+  ) -> (resolved: Bool, code: String?, message: String?) {
+    let expectation = expectation(description: "openAR with options settles")
+    var resolved = false
+    var code: String?
+    var message: String?
+    impl.openAR(
+      url,
+      scale: scale,
+      link: link,
+      resolve: {
+        resolved = true
+        expectation.fulfill()
+      },
+      reject: { rejectCode, rejectMessage in
+        code = rejectCode
+        message = rejectMessage
+        expectation.fulfill()
+      }
+    )
+    wait(for: [expectation], timeout: timeout)
+    return (resolved, code, message)
+  }
+
+  private func previewItem(of impl: ArPreviewImpl) throws -> ARQuickLookPreviewItem {
+    let item = impl.previewController(QLPreviewController(), previewItemAt: 0)
+    return try XCTUnwrap(item as? ARQuickLookPreviewItem)
+  }
+
+  private func writeLocalModel(named name: String) throws -> URL {
+    let modelUrl = cacheDir.appendingPathComponent(name)
+    try zipBytes.write(to: modelUrl)
+    return modelUrl
+  }
+
+  func test_fixed_scale_disables_content_scaling() throws {
+    let modelUrl = try writeLocalModel(named: "fixed.usdz")
+    let impl = makeImpl(presenter: { FakePresenter() })
+
+    let result = openAR(impl, url: modelUrl.absoluteString, scale: "fixed", link: nil)
+
+    XCTAssertTrue(result.resolved)
+    let item = try previewItem(of: impl)
+    XCTAssertFalse(item.allowsContentScaling)
+    XCTAssertNil(item.canonicalWebPageURL)
+  }
+
+  func test_auto_scale_keeps_content_scaling() throws {
+    let modelUrl = try writeLocalModel(named: "auto.usdz")
+    let impl = makeImpl(presenter: { FakePresenter() })
+
+    let result = openAR(impl, url: modelUrl.absoluteString, scale: "auto", link: nil)
+
+    XCTAssertTrue(result.resolved)
+    let item = try previewItem(of: impl)
+    XCTAssertTrue(item.allowsContentScaling)
+  }
+
+  func test_omitted_options_keep_platform_defaults() throws {
+    let modelUrl = try writeLocalModel(named: "defaults.usdz")
+    let impl = makeImpl(presenter: { FakePresenter() })
+
+    let result = openAR(impl, url: modelUrl.absoluteString)
+
+    XCTAssertTrue(result.resolved)
+    let item = try previewItem(of: impl)
+    XCTAssertTrue(item.allowsContentScaling)
+    XCTAssertNil(item.canonicalWebPageURL)
+  }
+
+  func test_link_sets_canonical_web_page_url() throws {
+    let modelUrl = try writeLocalModel(named: "linked.usdz")
+    let impl = makeImpl(presenter: { FakePresenter() })
+
+    let result = openAR(
+      impl,
+      url: modelUrl.absoluteString,
+      scale: nil,
+      link: "https://shop.example.com/chair"
+    )
+
+    XCTAssertTrue(result.resolved)
+    let item = try previewItem(of: impl)
+    XCTAssertTrue(item.allowsContentScaling)
+    XCTAssertEqual(
+      item.canonicalWebPageURL,
+      URL(string: "https://shop.example.com/chair")
+    )
+  }
+
+  func test_cached_reopen_applies_the_new_options() {
+    stubResponse(status: 200, data: zipBytes)
+    let firstImpl = makeImpl(presenter: { FakePresenter() })
+    let first = openAR(
+      firstImpl,
+      url: "https://example.com/models/chair.usdz",
+      scale: "fixed",
+      link: "https://shop.example.com/chair"
+    )
+    XCTAssertTrue(first.resolved)
+
+    StubURLProtocol.handler = { _ in .failure(URLError(.notConnectedToInternet)) }
+    let secondImpl = makeImpl(presenter: { FakePresenter() })
+    let second = openAR(
+      secondImpl,
+      url: "https://example.com/models/chair.usdz",
+      scale: "auto",
+      link: nil
+    )
+
+    XCTAssertTrue(second.resolved)
+    XCTAssertEqual(StubURLProtocol.requestCount, 1)
+    let item = try? previewItem(of: secondImpl)
+    XCTAssertEqual(item?.allowsContentScaling, true)
+    XCTAssertNil(item?.canonicalWebPageURL)
+  }
+
+  func test_rapid_second_open_keeps_the_in_flight_options() {
+    stubResponse(status: 200, data: zipBytes)
+    let presenter = FakePresenter()
+    let impl = makeImpl(presenter: { presenter })
+    let firstSettles = expectation(description: "first settles")
+    let secondSettles = expectation(description: "second settles")
+
+    impl.openAR(
+      "https://example.com/models/chair.usdz",
+      scale: "fixed",
+      link: "https://shop.example.com/chair",
+      resolve: { firstSettles.fulfill() },
+      reject: { _, _ in firstSettles.fulfill() }
+    )
+    impl.openAR(
+      "https://example.com/models/chair.usdz",
+      scale: "auto",
+      link: nil,
+      resolve: { secondSettles.fulfill() },
+      reject: { _, _ in secondSettles.fulfill() }
+    )
+    wait(for: [firstSettles, secondSettles], timeout: 5)
+
+    XCTAssertEqual(presenter.presented.count, 1)
+    let item = try? previewItem(of: impl)
+    XCTAssertEqual(item?.allowsContentScaling, false)
+    XCTAssertEqual(
+      item?.canonicalWebPageURL,
+      URL(string: "https://shop.example.com/chair")
+    )
+  }
+
+  func test_dismissal_clears_the_presented_options() throws {
+    let modelUrl = try writeLocalModel(named: "cleared.usdz")
+    let impl = makeImpl(presenter: { FakePresenter() })
+    let controller = QLPreviewController()
+    _ = openAR(impl, url: modelUrl.absoluteString, scale: "fixed", link: "https://shop.example.com/chair")
+
+    impl.previewControllerDidDismiss(controller)
+
+    XCTAssertEqual(impl.numberOfPreviewItems(in: controller), 0)
+    let result = openAR(impl, url: modelUrl.absoluteString)
+    XCTAssertTrue(result.resolved)
+    let item = try previewItem(of: impl)
+    XCTAssertTrue(item.allowsContentScaling)
+    XCTAssertNil(item.canonicalWebPageURL)
   }
 }
 
