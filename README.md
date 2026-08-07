@@ -1,7 +1,7 @@
 # react-native-ar-preview
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/dawidspisak/react-native-ar-preview/main/.github/react-native-ar-preview.gif" width="280" alt="Demo: opening a 3D model in the native AR viewer" />
+  <img src="https://raw.githubusercontent.com/software-mansion-labs/react-native-ar-preview/main/.github/react-native-ar-preview.gif" width="280" alt="Demo: opening a 3D model in the native AR viewer" />
 </p>
 
 View 3D models in the **native AR viewer** from React Native - the mobile

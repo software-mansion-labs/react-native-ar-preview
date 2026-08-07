@@ -57,14 +57,14 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/dawidspisak/react-native-ar-preview.git"
+    "url": "git+https://github.com/software-mansion-labs/react-native-ar-preview.git"
   },
-  "author": "Dawid Spisak <k.hajduk@onlinemasters.pl> (https://github.com/dawidspisak)",
+  "author": "Dawid Matyjasik <k.hajduk@onlinemasters.pl> (https://github.com/dawidmatyjasik)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/dawidspisak/react-native-ar-preview/issues"
+    "url": "https://github.com/software-mansion-labs/react-native-ar-preview/issues"
   },
-  "homepage": "https://github.com/dawidspisak/react-native-ar-preview#readme",
+  "homepage": "https://github.com/software-mansion-labs/react-native-ar-preview#readme",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
   },
