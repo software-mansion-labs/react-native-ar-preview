@@ -1,13 +1,17 @@
 import { Platform } from 'react-native';
 import NativeArPreview from './NativeArPreview';
 
-export type ModelSource = {
-  usdz?: string;
-  glb?: string;
+export type ModelSource =
+  { usdz: string; glb?: string } | { usdz?: string; glb: string };
+
+export type ViewerOptions = {
+  scale?: 'auto' | 'fixed';
+  link?: string;
 };
 
 export const ErrorCodes = {
   INVALID_SOURCE: 'E_INVALID_SOURCE',
+  INVALID_OPTIONS: 'E_INVALID_OPTIONS',
   DOWNLOAD_FAILED: 'E_DOWNLOAD_FAILED',
   AR_UNAVAILABLE: 'E_AR_UNAVAILABLE',
   LAUNCH_FAILED: 'E_LAUNCH_FAILED',
@@ -61,8 +65,28 @@ const selectUrl = (source: ModelSource): Promise<string> => {
   );
 };
 
-export const openAR = (source: ModelSource): Promise<void> =>
-  selectUrl(source).then((url) => NativeArPreview.openAR(url));
+const validateOptions = (options: ViewerOptions): Promise<ViewerOptions> => {
+  if (options.link !== undefined && !options.link.startsWith('https://')) {
+    return rejectWithCode(
+      ErrorCodes.INVALID_OPTIONS,
+      `The \`link\` option must be an https url, got: ${options.link}`
+    );
+  }
+  return Promise.resolve(options);
+};
+
+export const openAR = (
+  source: ModelSource,
+  options?: ViewerOptions
+): Promise<void> =>
+  selectUrl(source).then((url) => {
+    if (options === undefined) {
+      return NativeArPreview.openAR(url);
+    }
+    return validateOptions(options).then((validated) =>
+      NativeArPreview.openAR(url, validated.scale, validated.link)
+    );
+  });
 
 export const isARAvailable = (): Promise<boolean> => {
   if (Platform.OS !== 'ios' && Platform.OS !== 'android') {
