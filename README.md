@@ -4,15 +4,15 @@
   <img src="https://raw.githubusercontent.com/software-mansion-labs/react-native-ar-preview/main/.github/react-native-ar-preview.gif" width="280" alt="Demo: opening a 3D model in the native AR viewer" />
 </p>
 
-View 3D models in the **native AR viewer** from React Native - the mobile
-equivalent of [`<model-viewer>`](https://modelviewer.dev)'s "View in AR"
-button.
+Show 3D models in the **native AR viewer** from React Native - the mobile
+version of the "View in AR" button from
+[`<model-viewer>`](https://modelviewer.dev).
 
-- **iOS** - presents [AR Quick Look](https://developer.apple.com/augmented-reality/quick-look/) with a USDZ model
-- **Android** - launches [Scene Viewer](https://developers.google.com/ar/develop/scene-viewer) with a GLB model
+- **iOS** - opens [AR Quick Look](https://developer.apple.com/augmented-reality/quick-look/) with a USDZ model
+- **Android** - opens [Scene Viewer](https://developers.google.com/ar/develop/scene-viewer) with a GLB model
 
-One call, the platform's own AR experience, **zero runtime dependencies**.
-No embedded AR view, no 3D engine, no scene graph to manage.
+One function call, the platform's own AR experience, **zero runtime
+dependencies**. No embedded AR view, no 3D engine, no scene graph.
 
 ## Installation
 
@@ -20,15 +20,15 @@ No embedded AR view, no 3D engine, no scene graph to manage.
 npm install react-native-ar-preview
 ```
 
-Then rebuild your app (`pod install` runs via autolinking; Expo users run
-`npx expo prebuild` and make a new development build).
+Then rebuild your app. `pod install` runs through autolinking. On Expo, run
+`npx expo prebuild` and make a new development build.
 
 **Requirements:**
 
 - React Native **0.76+** with the **New Architecture** (the default since 0.76).
-- Bare React Native or Expo **development builds** - not Expo Go (ships native code).
-- **Android**: [Google Play Services for AR](https://play.google.com/store/apps/details?id=com.google.ar.core) on the device; the GLB model must be an **HTTPS** URL (Scene Viewer downloads it itself).
-- **iOS**: ARKit-capable device for the AR mode; Quick Look falls back to a 3D object view otherwise.
+- Bare React Native or an Expo **development build**. Expo Go does not work - the library ships native code.
+- **Android**: the device needs [Google Play Services for AR](https://play.google.com/store/apps/details?id=com.google.ar.core), and the GLB model must be an **HTTPS** URL because Scene Viewer downloads it itself.
+- **iOS**: AR mode needs an ARKit-capable device. On other devices Quick Look shows a plain 3D object view instead.
 
 ## Usage
 
@@ -59,10 +59,10 @@ const available = await isARAvailable();
 
 ### `openAR(source: ModelSource): Promise<void>`
 
-Opens the platform's system AR viewer for the given model. The promise
-**resolves once the viewer has been presented** - dismissal is not
-reported (Scene Viewer runs in a separate activity and returns no result,
-so a cross-platform dismissal signal would be a lie).
+Opens the system AR viewer for the given model. The promise **resolves when
+the viewer is on screen**. It does not tell you when the user closes the
+viewer: Scene Viewer runs in a separate Android activity and returns no
+result, so a reliable cross-platform close event is not possible.
 
 ```ts
 type ModelSource = {
@@ -71,20 +71,20 @@ type ModelSource = {
 };
 ```
 
-- `usdz` - used on iOS. Remote `https://` URLs are downloaded, validated,
-  and cached automatically (in `Caches/`, keyed by URL - version your URLs
-  to bust the cache). `file://` URLs are opened directly.
-- `glb` - used on Android. Must be an `https://` URL; Scene Viewer fetches
+- `usdz` - used on iOS. The library downloads `https://` URLs, checks that
+  the file is a real USDZ, and caches it in `Caches/`. The cache key is the
+  URL, so change the URL when the model changes. `file://` URLs open
+  directly.
+- `glb` - used on Android. Must be an `https://` URL. Scene Viewer downloads
   it itself and cannot open local files.
 
-Android launches Scene Viewer in `ar_preferred` mode: devices with Scene
-Viewer but without AR support still get the 3D fallback view.
+On Android the library opens Scene Viewer in `ar_preferred` mode: a device
+with Scene Viewer but without AR support still gets the 3D fallback view.
 
-Only one open can be in flight at a time: calling `openAR` again while a
-previous open is still in progress (for example a double-tap while the
-model is downloading on iOS, or before you return from Scene Viewer on
-Android) is a silent no-op - the duplicate call resolves immediately and
-nothing else happens.
+Only one open can run at a time. If you call `openAR` again while an earlier
+call is still working (for example after a double tap, or before the user
+returns from Scene Viewer), the second call resolves right away and does
+nothing.
 
 ### `isARAvailable(): Promise<boolean>`
 
@@ -96,54 +96,54 @@ nothing else happens.
 
 Rejections carry a `code` property with one of these stable values:
 
-| Code                | Meaning                                                                                                                                                   |
-| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `E_INVALID_SOURCE`  | No format for the current platform, or a non-HTTPS `glb` URL on Android.                                                                                  |
-| `E_DOWNLOAD_FAILED` | iOS could not download a usable USDZ file (network error, non-2xx status, or a response body that is not a USDZ archive). Nothing is cached in this case. |
-| `E_AR_UNAVAILABLE`  | No system AR viewer on this device, or an unsupported platform.                                                                                           |
-| `E_LAUNCH_FAILED`   | The viewer could not be presented for another reason.                                                                                                     |
+| Code                | Meaning                                                                                                                          |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `E_INVALID_SOURCE`  | The source has no format for the current platform, or the `glb` URL is not HTTPS on Android.                                     |
+| `E_DOWNLOAD_FAILED` | iOS could not download a valid USDZ file (network error, non-2xx status, or the response is not a USDZ archive). Nothing is cached. |
+| `E_AR_UNAVAILABLE`  | The device has no system AR viewer, or the platform is not supported.                                                            |
+| `E_LAUNCH_FAILED`   | The viewer could not be opened for another reason.                                                                               |
 
 ## Model formats
 
-Each platform consumes its own format - exactly like `<model-viewer>`'s
-`src` / `ios-src` pair - so ship every model twice:
+Each platform needs its own format - the same rule as `<model-viewer>`'s
+`src` / `ios-src` pair - so host every model in both:
 
-| Platform | Format | Notes                                        |
-| -------- | ------ | -------------------------------------------- |
-| iOS      | USDZ   | Downloaded by the library, cached on device. |
-| Android  | GLB    | Fetched by Scene Viewer over HTTPS.          |
+| Platform | Format | Notes                                          |
+| -------- | ------ | ---------------------------------------------- |
+| iOS      | USDZ   | Downloaded by the library, cached on device.   |
+| Android  | GLB    | Downloaded by Scene Viewer itself, over HTTPS. |
 
 ## Comparison with other solutions
 
 Different tools solve different problems - pick by what you need:
 
-|                            | react-native-ar-preview                          | [ViroReact](https://reactvision.xyz/viro-react/) | [react-native-ar-viewer](https://github.com/riderodd/react-native-ar) | [`<model-viewer>`](https://modelviewer.dev) in a WebView |
-| -------------------------- | ------------------------------------------------ | ------------------------------------------------ | ---------------------------------------------------------------------- | --------------------------------------------------------- |
-| System AR viewer UX        | ✅ Quick Look / Scene Viewer                      | 🚫 embedded engine                                | 🚫 embedded view                                                        | ✅ hands off to Quick Look / Scene Viewer                  |
-| Custom scene control       | 🚫 by design - the OS owns the experience         | ✅ lighting, physics, particles, events           | ⚠️ basic model placement                                                | 🚫 web-side only                                           |
-| Zero runtime dependencies  | ✅                                                | 🚫 full rendering engine                          | 🚫 ARKit + Sceneform (deprecated by Google)                             | 🚫 WebView + web runtime                                   |
-| New Architecture           | ✅ Turbo Module, 0.76+                            | ✅                                                | 🚫 predates it                                                          | ➖ N/A                                                     |
-| Actively maintained        | ✅                                                | ✅ ReactVision community                          | 🚫 last published March 2023                                            | ✅ Google, web project                                     |
-| Best for                   | A "View in AR" button for product/model previews | Custom AR experiences, games, interactive scenes | ➖                                                                      | Reusing an existing web 3D pipeline                        |
+|                                                | react-native-ar-preview                          | [ViroReact](https://reactvision.xyz/viro-react/) | [react-native-ar-viewer](https://github.com/riderodd/react-native-ar) | [`<model-viewer>`](https://modelviewer.dev) in a WebView |
+| ---------------------------------------------- | ------------------------------------------------ | ------------------------------------------------ | ---------------------------------------------------------------------- | --------------------------------------------------------- |
+| Native AR UX by Apple & Google                 | ✅ Quick Look / Scene Viewer, straight from JS    | 🚫 renders the scene itself                       | 🚫 renders the scene itself                                             | ⚠️ only after a WebView hand-off                           |
+| Zero runtime dependencies                      | ✅ nothing else in your bundle or native build    | 🚫 full 3D engine                                 | 🚫 ARKit + Sceneform (deprecated by Google)                             | 🚫 WebView + web runtime                                   |
+| One-call API - no scene graph to manage        | ✅ `openAR(source)` and you're done               | 🚫 scenes, materials, events to wire up           | ⚠️ AR view component to embed and manage                                | 🚫 web page and messaging bridge to ship                   |
+| New Architecture                               | ✅ Turbo Module, RN 0.76+                         | ✅                                                | 🚫 predates it (last release 2023)                                      | ➖ N/A                                                     |
+| Actively maintained                            | ✅                                                | ✅ ReactVision community                          | 🚫 last published March 2023                                            | ✅ Google, web project                                     |
+| Custom AR scenes (anchors, gestures, overlays) | 🚫 by design - see below                          | ✅                                                | ⚠️ basic model placement                                                | 🚫                                                         |
+| Best for                                       | A "View in AR" button for product/model previews | Custom AR experiences, games, interactive scenes | ➖                                                                      | Reusing an existing web 3D pipeline                        |
 
-**Honest guidance:** if you need to control the AR scene - anchors, gestures
-you define, custom rendering - use ViroReact; this library cannot do that
-by design. If all you need is "show this product in the user's room", the
-system viewers give you Apple's and Google's own AR UX (occlusion, people
-occlusion, quick placement) for free, and this library is the thinnest
-possible path to them.
+**Honest guidance:** if you need to control the AR scene - your own anchors,
+gestures, or rendering - use ViroReact. This library cannot do that, by
+design. If all you need is "show this product in the user's room", the
+system viewers give you Apple's and Google's own AR UX (occlusion, quick
+placement) for free, and this library is the shortest path to them.
 
 ## Why this library
 
 - **Zero runtime dependencies** - one small Turbo Module, nothing else in your bundle or your native build.
-- **The platform's own AR UX** - rendering and interaction are maintained by Apple and Google, so they improve with every OS release without a library update.
-- **Robust by contract** - stable error codes, iOS downloads are validated (a 200 response that isn't a real USDZ is rejected, never cached) and cached for instant re-opens.
-- **Tested native code** - the iOS and Android implementations ship with native unit test suites covering the end-user scenarios (downloads, caching, failures, re-entry).
-- **Expo-friendly** - works in development builds with no config plugin needed.
+- **The platform's own AR UX** - Apple and Google maintain the rendering and interaction, so the experience improves with every OS release, without a library update.
+- **Robust by contract** - stable error codes. iOS downloads are validated: a 200 response that is not a real USDZ is rejected and never cached. Valid models are cached for instant re-opens.
+- **Tested native code** - the iOS and Android implementations ship with native unit tests that cover the end-user scenarios: downloads, caching, failures, re-entry.
+- **Expo-friendly** - works in development builds, no config plugin needed.
 
 ## Example app
 
-The [example](./example) is an Expo app (SDK 57). AR requires a physical
+The [example](./example) is an Expo app (SDK 57). AR needs a physical
 device:
 
 ```sh
@@ -154,8 +154,8 @@ yarn example android --device
 
 ## Contributing
 
-See the [contributing guide](CONTRIBUTING.md) to learn how to contribute
-to the repository and the development workflow.
+See the [contributing guide](CONTRIBUTING.md) for the development workflow
+and how to send changes.
 
 ## License
 
