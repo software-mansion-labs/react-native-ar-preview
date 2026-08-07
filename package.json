@@ -35,11 +35,18 @@
     "example": "yarn workspace example",
     "clean": "del-cli lib",
     "prepare": "bob build",
+    "postinstall": "husky",
+    "prepack": "pinst --disable",
+    "postpack": "pinst --enable",
     "typecheck": "tsc && yarn workspace example tsc --noEmit",
     "test": "jest",
     "test:ios": "./scripts/test-ios.sh",
     "test:android": "cd example/android && ./gradlew :react-native-ar-preview:testDebugUnitTest",
     "lint": "eslint \"**/*.{js,ts,tsx}\""
+  },
+  "lint-staged": {
+    "*.{js,ts,tsx}": "eslint --fix --no-warn-ignored",
+    "*.{md,json,yml,yaml}": "prettier --write"
   },
   "keywords": [
     "react-native",
@@ -69,6 +76,8 @@
     "registry": "https://registry.npmjs.org/"
   },
   "devDependencies": {
+    "@commitlint/cli": "^21.2.1",
+    "@commitlint/config-conventional": "^21.2.0",
     "@eslint/compat": "^2.1.0",
     "@eslint/eslintrc": "^3.3.5",
     "@eslint/js": "^10.0.1",
@@ -82,7 +91,10 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-ft-flow": "^3.0.11",
     "eslint-plugin-prettier": "^5.5.6",
+    "husky": "^9.1.7",
     "jest": "^29.7.0",
+    "lint-staged": "^17.3.0",
+    "pinst": "^3.0.0",
     "prettier": "^3.8.3",
     "react": "19.2.0",
     "react-native": "0.83.10",
