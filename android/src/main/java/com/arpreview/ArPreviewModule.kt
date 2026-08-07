@@ -33,6 +33,8 @@ class ArPreviewModule(reactContext: ReactApplicationContext) :
   override fun openAR(url: String, scale: String?, link: String?, promise: Promise) {
     launcher.launch(
       url,
+      scale,
+      link,
       onLaunched = { promise.resolve(null) },
       onFailed = { code, message, error -> promise.reject(code, message, error) }
     )

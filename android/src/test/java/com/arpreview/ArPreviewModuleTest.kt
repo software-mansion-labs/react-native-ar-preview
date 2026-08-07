@@ -10,7 +10,6 @@ import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -52,25 +51,36 @@ class ArPreviewModuleTest {
   }
 
   @Test
-  fun `options produce an intent identical to a launch without options`() {
+  fun `options are forwarded into the scene viewer intent`() {
+    module.openAR(MODEL_URL, "fixed", PRODUCT_LINK, promise)
+
+    val started = shadowOf(activity).nextStartedActivity
+    assertEquals("com.google.ar.core", started.`package`)
+    assertEquals(MODEL_URL, started.data?.getQueryParameter("file"))
+    assertEquals("ar_preferred", started.data?.getQueryParameter("mode"))
+    assertEquals("false", started.data?.getQueryParameter("resizable"))
+    assertEquals(PRODUCT_LINK, started.data?.getQueryParameter("link"))
+    verify(promise).resolve(null)
+  }
+
+  @Test
+  fun `a call without options builds the intent exactly as before`() {
     module.openAR(MODEL_URL, null, null, promise)
-    val withoutOptions = shadowOf(activity).nextStartedActivity
 
-    module.onHostResume()
-    module.openAR(MODEL_URL, "fixed", "https://shop.example.com/chair", promise)
-    val withOptions = shadowOf(activity).nextStartedActivity
-
-    assertTrue(withoutOptions.filterEquals(withOptions))
-    assertEquals(withoutOptions.flags, withOptions.flags)
-    assertNull(withoutOptions.extras)
-    assertNull(withOptions.extras)
-    verify(promise, times(2)).resolve(null)
+    val started = shadowOf(activity).nextStartedActivity
+    assertEquals("com.google.ar.core", started.`package`)
+    assertEquals(MODEL_URL, started.data?.getQueryParameter("file"))
+    assertEquals("ar_preferred", started.data?.getQueryParameter("mode"))
+    assertNull(started.data?.getQueryParameter("resizable"))
+    assertNull(started.data?.getQueryParameter("link"))
+    assertNull(started.extras)
+    verify(promise).resolve(null)
   }
 
   @Test
   fun `duplicate launch guard behaves the same with options`() {
-    module.openAR(MODEL_URL, "fixed", "https://shop.example.com/chair", promise)
-    module.openAR(MODEL_URL, "fixed", "https://shop.example.com/chair", promise)
+    module.openAR(MODEL_URL, "fixed", PRODUCT_LINK, promise)
+    module.openAR(MODEL_URL, "fixed", PRODUCT_LINK, promise)
 
     val first = shadowOf(activity).nextStartedActivity
     val second = shadowOf(activity).nextStartedActivity
@@ -81,5 +91,6 @@ class ArPreviewModuleTest {
 
   companion object {
     private const val MODEL_URL = "https://example.com/models/chair.glb"
+    private const val PRODUCT_LINK = "https://shop.example.com/chair"
   }
 }
