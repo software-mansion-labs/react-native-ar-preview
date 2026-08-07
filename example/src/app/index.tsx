@@ -12,9 +12,11 @@ const Index = () => {
   const insets = useSafeAreaInsets();
 
   const handleOpenAR = () => {
-    openAR(MODEL.source).catch((error: Error & { code?: ErrorCode }) => {
-      Alert.alert('AR error', `${error.code ?? 'unknown'}: ${error.message}`);
-    });
+    openAR(MODEL.source, { link: 'https://modelviewer.dev' }).catch(
+      (error: Error & { code?: ErrorCode }) => {
+        Alert.alert('AR error', `${error.code ?? 'unknown'}: ${error.message}`);
+      }
+    );
   };
 
   return (

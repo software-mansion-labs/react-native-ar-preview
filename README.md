@@ -57,7 +57,7 @@ const available = await isARAvailable();
 
 ## API
 
-### `openAR(source: ModelSource): Promise<void>`
+### `openAR(source: ModelSource, options?: ViewerOptions): Promise<void>`
 
 Opens the system AR viewer for the given model. The promise **resolves when
 the viewer is on screen**. It does not tell you when the user closes the
@@ -65,11 +65,12 @@ viewer: Scene Viewer runs in a separate Android activity and returns no
 result, so a reliable cross-platform close event is not possible.
 
 ```ts
-type ModelSource = {
-  usdz?: string;
-  glb?: string;
-};
+type ModelSource =
+  { usdz: string; glb?: string } | { usdz?: string; glb: string };
 ```
+
+At least one format is required - TypeScript enforces it. An app that ships
+on one platform only can pass just that platform's format.
 
 - `usdz` - used on iOS. The library downloads `https://` URLs, checks that
   the file is a real USDZ, and caches it in `Caches/`. The cache key is the
@@ -86,6 +87,46 @@ call is still working (for example after a double tap, or before the user
 returns from Scene Viewer), the second call resolves right away and does
 nothing.
 
+### Viewer options
+
+The optional second argument controls how the viewer presents the model.
+Options describe intent in one cross-platform vocabulary; each platform
+translates them into its own viewer parameters.
+
+```tsx
+await openAR(
+  { usdz: 'https://example.com/chair.usdz', glb: 'https://example.com/chair.glb' },
+  { scale: 'fixed', link: 'https://shop.example.com/chair' }
+);
+```
+
+```ts
+type ViewerOptions = {
+  scale?: 'auto' | 'fixed';
+  link?: string;
+};
+```
+
+- `scale` - `'fixed'` locks the model to its real-world size, so the user
+  cannot pinch-scale it. Default `'auto'` keeps the platform behavior.
+- `link` - the product web page for this model. Must be an `https://` URL.
+  On iOS the Quick Look share sheet then shares this page instead of the
+  raw model file.
+
+| Option  | iOS (Quick Look)                 | Android (Scene Viewer)  |
+| ------- | -------------------------------- | ----------------------- |
+| `scale` | ✅ 0.2.0 (`allowsContentScaling`) | Planned for 0.3.0       |
+| `link`  | ✅ 0.2.0 (`canonicalWebPageURL`)  | Planned for 0.3.0       |
+
+An option that a platform does not support yet is silently ignored there -
+your call stays cross-platform. An invalid option value (for example a
+non-HTTPS `link`) rejects with `E_INVALID_OPTIONS` before anything opens.
+
+> **Note:** the Quick Look Apple Pay / custom-action banner is a Safari-only
+> feature driven by URL parameters. Native apps cannot show it, and this
+> library will not embed a WebView to fake it. If you need that banner, use
+> [`<model-viewer>`](https://modelviewer.dev) on your website.
+
 ### `isARAvailable(): Promise<boolean>`
 
 - **iOS** - whether the device supports ARKit world tracking.
@@ -99,6 +140,7 @@ Rejections carry a `code` property with one of these stable values:
 | Code                | Meaning                                                                                                                          |
 | ------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | `E_INVALID_SOURCE`  | The source has no format for the current platform, or the `glb` URL is not HTTPS on Android.                                     |
+| `E_INVALID_OPTIONS` | An option value is invalid - today: a `link` that is not an `https://` URL.                                                      |
 | `E_DOWNLOAD_FAILED` | iOS could not download a valid USDZ file (network error, non-2xx status, or the response is not a USDZ archive). Nothing is cached. |
 | `E_AR_UNAVAILABLE`  | The device has no system AR viewer, or the platform is not supported.                                                            |
 | `E_LAUNCH_FAILED`   | The viewer could not be opened for another reason.                                                                               |
