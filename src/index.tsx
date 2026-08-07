@@ -1,14 +1,54 @@
 import { Platform } from 'react-native';
 import NativeArPreview from './NativeArPreview';
 
-export type ModelSource =
-  { usdz: string; glb?: string } | { usdz?: string; glb: string };
+type ModelFormats = {
+  /**
+   * The model for iOS, shown in AR Quick Look.
+   * `https://` URLs are downloaded, validated as USDZ, and cached on the
+   * device (keyed by URL - change the URL when the model changes).
+   * `file://` URLs open directly.
+   */
+  usdz?: string;
+  /**
+   * The model for Android, shown in Scene Viewer.
+   * Must be an `https://` URL - Scene Viewer downloads it itself and
+   * cannot open local files.
+   */
+  glb?: string;
+};
 
+/**
+ * The model to preview, keyed by format. At least one format is required.
+ * A source missing the format the current platform needs rejects with
+ * `E_INVALID_SOURCE`.
+ */
+export type ModelSource = ModelFormats & ({ usdz: string } | { glb: string });
+
+/**
+ * Cross-platform presentation options for the system AR viewer. Each
+ * platform translates them into its own viewer parameters.
+ */
 export type ViewerOptions = {
+  /**
+   * `'fixed'` locks the model to its real-world size, so the user cannot
+   * pinch-scale it in AR mode. `'auto'` (default) keeps the platform
+   * behavior. iOS: `allowsContentScaling`; Android: `resizable=false`.
+   */
   scale?: 'auto' | 'fixed';
+  /**
+   * The product web page for this model. Must be an `https://` URL,
+   * otherwise `openAR` rejects with `E_INVALID_OPTIONS`.
+   * Android: shown as a tappable link in Scene Viewer. iOS: the Quick Look
+   * share sheet shares this page instead of the raw model file (broken on
+   * iOS 26 by an OS regression - google/model-viewer#4770).
+   */
   link?: string;
 };
 
+/**
+ * Stable error codes carried on the `code` property of errors rejected by
+ * {@link openAR} and {@link isARAvailable}.
+ */
 export const ErrorCodes = {
   INVALID_SOURCE: 'E_INVALID_SOURCE',
   INVALID_OPTIONS: 'E_INVALID_OPTIONS',
@@ -75,6 +115,15 @@ const validateOptions = (options: ViewerOptions): Promise<ViewerOptions> => {
   return Promise.resolve(options);
 };
 
+/**
+ * Opens the system AR viewer for the given model - AR Quick Look on iOS,
+ * Scene Viewer on Android.
+ *
+ * Resolves once the viewer is on screen; closing the viewer is not
+ * reported. Calling again while an earlier open is still in flight is a
+ * silent no-op. Rejects with an `Error` carrying a `code` from
+ * {@link ErrorCodes}.
+ */
 export const openAR = (
   source: ModelSource,
   options?: ViewerOptions
@@ -88,6 +137,11 @@ export const openAR = (
     );
   });
 
+/**
+ * Whether this device can show an AR preview - ARKit world tracking on
+ * iOS, a resolvable Scene Viewer on Android, always `false` elsewhere.
+ * Use it to hide the AR button on devices that cannot show AR.
+ */
 export const isARAvailable = (): Promise<boolean> => {
   if (Platform.OS !== 'ios' && Platform.OS !== 'android') {
     return Promise.resolve(false);
