@@ -230,6 +230,44 @@ final class ArPreviewImplTests: XCTestCase {
     XCTAssertTrue(presenter.presented.isEmpty)
   }
 
+  func test_rapid_second_open_is_ignored_and_downloads_once() {
+    stubResponse(status: 200, data: zipBytes)
+    let presenter = FakePresenter()
+    let impl = makeImpl(presenter: { presenter })
+    let firstSettles = expectation(description: "first openAR settles")
+    let secondSettles = expectation(description: "second openAR settles")
+    var firstResolved = false
+    var secondResolved = false
+    var secondCode: String?
+
+    impl.openAR(
+      "https://example.com/models/chair.usdz",
+      resolve: {
+        firstResolved = true
+        firstSettles.fulfill()
+      },
+      reject: { _, _ in firstSettles.fulfill() }
+    )
+    impl.openAR(
+      "https://example.com/models/chair.usdz",
+      resolve: {
+        secondResolved = true
+        secondSettles.fulfill()
+      },
+      reject: { code, _ in
+        secondCode = code
+        secondSettles.fulfill()
+      }
+    )
+    wait(for: [firstSettles, secondSettles], timeout: 5)
+
+    XCTAssertTrue(firstResolved)
+    XCTAssertTrue(secondResolved)
+    XCTAssertNil(secondCode)
+    XCTAssertEqual(StubURLProtocol.requestCount, 1)
+    XCTAssertEqual(presenter.presented.count, 1)
+  }
+
   func test_missing_presenter_rejects_with_launch_failed() throws {
     let modelUrl = cacheDir.appendingPathComponent("local.usdz")
     try zipBytes.write(to: modelUrl)

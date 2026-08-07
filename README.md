@@ -80,6 +80,11 @@ type ModelSource = {
 Android launches Scene Viewer in `ar_preferred` mode: devices with Scene
 Viewer but without AR support still get the 3D fallback view.
 
+Only one open can be in flight at a time: calling `openAR` again before
+the previous call has settled (for example a double-tap while the model
+is still downloading) is a silent no-op - the duplicate call resolves
+immediately and nothing else happens.
+
 ### `isARAvailable(): Promise<boolean>`
 
 - **iOS** - whether the device supports ARKit world tracking.

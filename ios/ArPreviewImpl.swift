@@ -13,6 +13,8 @@ import UIKit
 
   private var presentedItemUrl: URL?
   private weak var presentedController: QLPreviewController?
+  private let openLock = NSLock()
+  private var isOpening = false
 
   @objc public override convenience init() {
     self.init(
@@ -46,9 +48,21 @@ import UIKit
 
   @objc public func openAR(
     _ url: String,
-    resolve: @escaping () -> Void,
-    reject: @escaping (String, String) -> Void
+    resolve rawResolve: @escaping () -> Void,
+    reject rawReject: @escaping (String, String) -> Void
   ) {
+    guard beginOpen() else {
+      rawResolve()
+      return
+    }
+    let resolve = {
+      self.endOpen()
+      rawResolve()
+    }
+    let reject = { (code: String, message: String) in
+      self.endOpen()
+      rawReject(code, message)
+    }
     guard let sourceUrl = URL(string: url) else {
       reject("E_INVALID_SOURCE", "Invalid url: \(url)")
       return
@@ -94,6 +108,22 @@ import UIKit
       self.present(itemAt: cachedUrl, resolve: resolve, reject: reject)
     }
     task.resume()
+  }
+
+  private func beginOpen() -> Bool {
+    openLock.lock()
+    defer { openLock.unlock() }
+    if isOpening {
+      return false
+    }
+    isOpening = true
+    return true
+  }
+
+  private func endOpen() {
+    openLock.lock()
+    defer { openLock.unlock() }
+    isOpening = false
   }
 
   private func present(
