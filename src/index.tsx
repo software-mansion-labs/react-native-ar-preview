@@ -156,10 +156,9 @@ export const openAR = async (
  * Whether this device can show an AR preview.
  *
  * - iOS: the device supports ARKit world tracking.
- * - Android: the Scene Viewer intent can be resolved.
+ * - Android: this is a physical device and the Scene Viewer intent can be
+ *   resolved.
  * - Other platforms: always `false`.
- *
- * Use it to hide the AR button when AR is not available.
  */
 export const isARAvailable = (): boolean => {
   if (Platform.OS !== 'ios' && Platform.OS !== 'android') {

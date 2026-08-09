@@ -5,7 +5,7 @@
 </p>
 
 Show 3D models in the **native AR viewer** from React Native - the mobile
-version of the "View in AR" button from
+counterpart of the AR mode in
 [`<model-viewer>`](https://modelviewer.dev).
 
 - **iOS** - opens [AR Quick Look](https://developer.apple.com/augmented-reality/quick-look/) with a USDZ model
@@ -47,22 +47,6 @@ const viewInAR = async () => {
       console.warn('AR is not available on this device');
     }
   }
-};
-```
-
-Hide the AR button on devices that cannot show AR:
-
-```tsx
-import { useIsARAvailable } from 'react-native-ar-preview';
-
-const ARButton = () => {
-  const available = useIsARAvailable();
-
-  if (!available) {
-    return null;
-  }
-
-  return <Button title="View in AR" onPress={viewInAR} />;
 };
 ```
 
@@ -192,7 +176,7 @@ Different tools solve different problems - pick by what you need:
 | New Architecture                               | ✅ Turbo Module, RN 0.76+                         | ✅                                                | 🚫 predates it (last release 2023)                                      | ➖ N/A                                                     |
 | Actively maintained                            | ✅                                                | ✅ ReactVision community                          | 🚫 last published March 2023                                            | ✅ Google, web project                                     |
 | Custom AR scenes (anchors, gestures, overlays) | 🚫 by design - see below                          | ✅                                                | ⚠️ basic model placement                                                | 🚫                                                         |
-| Best for                                       | A "View in AR" button for product/model previews | Custom AR experiences, games, interactive scenes | ➖                                                                      | Reusing an existing web 3D pipeline                        |
+| Best for                                       | Product/model previews in the system AR viewer   | Custom AR experiences, games, interactive scenes | ➖                                                                      | Reusing an existing web 3D pipeline                        |
 
 **Honest guidance:** if you need to control the AR scene - your own anchors,
 gestures, or rendering - use ViroReact. This library cannot do that, by
