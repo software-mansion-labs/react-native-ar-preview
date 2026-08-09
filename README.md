@@ -1,5 +1,7 @@
 # react-native-ar-preview
 
+[![npm version](https://img.shields.io/npm/v/react-native-ar-preview)](https://www.npmjs.com/package/react-native-ar-preview)
+
 <p align="center">
   <img src="https://raw.githubusercontent.com/software-mansion-labs/react-native-ar-preview/main/.github/react-native-ar-preview.gif" width="280" alt="Demo: opening a 3D model in the native AR viewer" />
 </p>
@@ -92,7 +94,10 @@ translates them into its own viewer parameters.
 
 ```tsx
 await openAR(
-  { usdz: 'https://example.com/chair.usdz', glb: 'https://example.com/chair.glb' },
+  {
+    usdz: 'https://example.com/chair.usdz',
+    glb: 'https://example.com/chair.glb',
+  },
   { scale: 'fixed', link: 'https://shop.example.com/chair' }
 );
 ```
@@ -114,8 +119,8 @@ type ViewerOptions = {
 
 | Option  | iOS (Quick Look)              | Android (Scene Viewer) |
 | ------- | ----------------------------- | ---------------------- |
-| `scale` | ✅ (`allowsContentScaling`)    | ✅ (`resizable`)        |
-| `link`  | ✅ (`canonicalWebPageURL`) \*  | ✅ (`link`)             |
+| `scale` | ✅ (`allowsContentScaling`)   | ✅ (`resizable`)       |
+| `link`  | ✅ (`canonicalWebPageURL`) \* | ✅ (`link`)            |
 
 \* **Known iOS 26 issue:** iOS 26 ignores `canonicalWebPageURL` and shares
 the raw model file instead of the page
@@ -141,13 +146,13 @@ call stays cross-platform. An invalid option value (for example a non-HTTPS
 
 Rejections carry a `code` property with one of these stable values:
 
-| Code                | Meaning                                                                                                                          |
-| ------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `E_INVALID_SOURCE`  | The source has no format for the current platform, or the `glb` URL is not HTTPS on Android.                                     |
-| `E_INVALID_OPTIONS` | An option value is invalid - today: a `link` that is not an `https://` URL.                                                      |
+| Code                | Meaning                                                                                                                             |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `E_INVALID_SOURCE`  | The source has no format for the current platform, or the `glb` URL is not HTTPS on Android.                                        |
+| `E_INVALID_OPTIONS` | An option value is invalid - today: a `link` that is not an `https://` URL.                                                         |
 | `E_DOWNLOAD_FAILED` | iOS could not download a valid USDZ file (network error, non-2xx status, or the response is not a USDZ archive). Nothing is cached. |
-| `E_AR_UNAVAILABLE`  | AR preview is unavailable, the app runs on a simulator or emulator, or the platform is not supported.                           |
-| `E_LAUNCH_FAILED`   | The viewer could not be opened for another reason.                                                                               |
+| `E_AR_UNAVAILABLE`  | AR preview is unavailable, the app runs on a simulator or emulator, or the platform is not supported.                               |
+| `E_LAUNCH_FAILED`   | The viewer could not be opened for another reason.                                                                                  |
 
 ## Model formats
 
@@ -163,15 +168,15 @@ Each platform needs its own format - the same rule as `<model-viewer>`'s
 
 Different tools solve different problems - pick by what you need:
 
-|                                                | react-native-ar-preview                          | [ViroReact](https://reactvision.xyz/viro-react/) | [react-native-ar-viewer](https://github.com/riderodd/react-native-ar) | [`<model-viewer>`](https://modelviewer.dev) in a WebView |
-| ---------------------------------------------- | ------------------------------------------------ | ------------------------------------------------ | ---------------------------------------------------------------------- | --------------------------------------------------------- |
-| Native AR UX by Apple & Google                 | ✅ Quick Look / Scene Viewer, straight from JS    | 🚫 renders the scene itself                       | 🚫 renders the scene itself                                             | ⚠️ only after a WebView hand-off                           |
-| Zero runtime dependencies                      | ✅ nothing else in your bundle or native build    | 🚫 full 3D engine                                 | 🚫 ARKit + Sceneform (deprecated by Google)                             | 🚫 WebView + web runtime                                   |
-| One-call API - no scene graph to manage        | ✅ `openAR(source)` and you're done               | 🚫 scenes, materials, events to wire up           | ⚠️ AR view component to embed and manage                                | 🚫 web page and messaging bridge to ship                   |
-| New Architecture                               | ✅ Turbo Module, RN 0.76+                         | ✅                                                | 🚫 predates it (last release 2023)                                      | ➖ N/A                                                     |
-| Actively maintained                            | ✅                                                | ✅ ReactVision community                          | 🚫 last published March 2023                                            | ✅ Google, web project                                     |
-| Custom AR scenes (anchors, gestures, overlays) | 🚫 by design - see below                          | ✅                                                | ⚠️ basic model placement                                                | 🚫                                                         |
-| Best for                                       | Product/model previews in the system AR viewer   | Custom AR experiences, games, interactive scenes | ➖                                                                      | Reusing an existing web 3D pipeline                        |
+|                                                | react-native-ar-preview                        | [ViroReact](https://reactvision.xyz/viro-react/) | [react-native-ar-viewer](https://github.com/riderodd/react-native-ar) | [`<model-viewer>`](https://modelviewer.dev) in a WebView |
+| ---------------------------------------------- | ---------------------------------------------- | ------------------------------------------------ | --------------------------------------------------------------------- | -------------------------------------------------------- |
+| Native AR UX by Apple & Google                 | ✅ Quick Look / Scene Viewer, straight from JS | 🚫 renders the scene itself                      | 🚫 renders the scene itself                                           | ⚠️ only after a WebView hand-off                         |
+| Zero runtime dependencies                      | ✅ nothing else in your bundle or native build | 🚫 full 3D engine                                | 🚫 ARKit + Sceneform (deprecated by Google)                           | 🚫 WebView + web runtime                                 |
+| One-call API - no scene graph to manage        | ✅ `openAR(source)` and you're done            | 🚫 scenes, materials, events to wire up          | ⚠️ AR view component to embed and manage                              | 🚫 web page and messaging bridge to ship                 |
+| New Architecture                               | ✅ Turbo Module, RN 0.76+                      | ✅                                               | 🚫 predates it (last release 2023)                                    | ➖ N/A                                                   |
+| Actively maintained                            | ✅                                             | ✅ ReactVision community                         | 🚫 last published March 2023                                          | ✅ Google, web project                                   |
+| Custom AR scenes (anchors, gestures, overlays) | 🚫 by design - see below                       | ✅                                               | ⚠️ basic model placement                                              | 🚫                                                       |
+| Best for                                       | Product/model previews in the system AR viewer | Custom AR experiences, games, interactive scenes | ➖                                                                    | Reusing an existing web 3D pipeline                      |
 
 **Honest guidance:** if you need to control the AR scene - your own anchors,
 gestures, or rendering - use ViroReact. This library cannot do that, by
