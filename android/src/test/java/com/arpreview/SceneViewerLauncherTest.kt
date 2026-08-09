@@ -7,6 +7,7 @@ import android.content.pm.ActivityInfo
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
+import android.os.Build
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -23,6 +24,7 @@ import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.shadows.ShadowBuild
 
 @RunWith(RobolectricTestRunner::class)
 class SceneViewerLauncherTest {
@@ -142,6 +144,21 @@ class SceneViewerLauncherTest {
 
     stubSceneViewerInstalled(false)
     assertFalse(makeLauncher().isAvailable())
+  }
+
+  @Test
+  fun `isAvailable returns false on an Android emulator`() {
+    val hardware = Build.HARDWARE
+    stubSceneViewerInstalled(true)
+
+    try {
+      listOf("goldfish", "ranchu", "vbox86").forEach { emulatorHardware ->
+        ShadowBuild.setHardware(emulatorHardware)
+        assertFalse(makeLauncher().isAvailable())
+      }
+    } finally {
+      ShadowBuild.setHardware(hardware)
+    }
   }
 
   @Test

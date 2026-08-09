@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 
 class SceneViewerLauncher(
   private val packageManager: PackageManager,
@@ -13,7 +14,7 @@ class SceneViewerLauncher(
   private var launchInFlight = false
 
   fun isAvailable(): Boolean =
-    buildIntent(PROBE_MODEL_URL).resolveActivity(packageManager) != null
+    !isEmulator() && buildIntent(PROBE_MODEL_URL).resolveActivity(packageManager) != null
 
   fun notifyHostResumed() {
     launchInFlight = false
@@ -53,6 +54,15 @@ class SceneViewerLauncher(
     const val E_AR_UNAVAILABLE = "E_AR_UNAVAILABLE"
     const val E_LAUNCH_FAILED = "E_LAUNCH_FAILED"
     private const val PROBE_MODEL_URL = "https://example.com/probe.glb"
+
+    private fun isEmulator(): Boolean =
+      Build.HARDWARE == "goldfish" ||
+        Build.HARDWARE == "ranchu" ||
+        Build.HARDWARE.startsWith("vbox") ||
+        Build.PRODUCT.startsWith("sdk_gphone") ||
+        Build.MODEL.contains("Emulator") ||
+        Build.MODEL.contains("Android SDK built for") ||
+        (Build.BRAND.startsWith("generic") && Build.DEVICE.startsWith("generic"))
 
     fun buildIntent(url: String, scale: String? = null, link: String? = null): Intent {
       val builder = Uri.parse("https://arvr.google.com/scene-viewer/1.0")
