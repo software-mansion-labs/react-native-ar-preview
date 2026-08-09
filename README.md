@@ -1,6 +1,10 @@
 # react-native-ar-preview
 
 [![npm version](https://img.shields.io/npm/v/react-native-ar-preview)](https://www.npmjs.com/package/react-native-ar-preview)
+[![CI](https://github.com/software-mansion-labs/react-native-ar-preview/actions/workflows/ci.yml/badge.svg)](https://github.com/software-mansion-labs/react-native-ar-preview/actions/workflows/ci.yml)
+[![types](https://img.shields.io/npm/types/react-native-ar-preview)](https://www.npmjs.com/package/react-native-ar-preview)
+[![platforms](https://img.shields.io/badge/platforms-ios%20%7C%20android-blue)](https://github.com/software-mansion-labs/react-native-ar-preview#installation)
+[![license](https://img.shields.io/npm/l/react-native-ar-preview)](https://github.com/software-mansion-labs/react-native-ar-preview/blob/main/LICENSE)
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/software-mansion-labs/react-native-ar-preview/main/.github/react-native-ar-preview.gif" width="280" alt="Demo: opening a 3D model in the native AR viewer" />
