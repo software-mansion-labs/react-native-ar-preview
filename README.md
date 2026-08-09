@@ -28,12 +28,13 @@ Then rebuild your app. `pod install` runs through autolinking. On Expo, run
 - React Native **0.76+** with the **New Architecture** (the default since 0.76).
 - Bare React Native or an Expo **development build**. Expo Go does not work - the library ships native code.
 - **Android**: the device needs [Google Play Services for AR](https://play.google.com/store/apps/details?id=com.google.ar.core), and the GLB model must be an **HTTPS** URL because Scene Viewer downloads it itself.
-- **iOS**: AR mode needs an ARKit-capable device. On other devices Quick Look shows a plain 3D object view instead.
+- **iOS**: AR mode needs an ARKit-capable device.
+- A physical device is required. iOS simulators and Android emulators reject with `E_AR_UNAVAILABLE`.
 
 ## Usage
 
 ```tsx
-import { openAR, isARAvailable, ErrorCodes } from 'react-native-ar-preview';
+import { openAR, ErrorCodes } from 'react-native-ar-preview';
 
 const viewInAR = async () => {
   try {
@@ -49,10 +50,20 @@ const viewInAR = async () => {
 };
 ```
 
-Hide the AR button on devices that cannot show AR at all:
+Hide the AR button on devices that cannot show AR:
 
 ```tsx
-const available = await isARAvailable();
+import { useIsARAvailable } from 'react-native-ar-preview';
+
+const ARButton = () => {
+  const available = useIsARAvailable();
+
+  if (!available) {
+    return null;
+  }
+
+  return <Button title="View in AR" onPress={viewInAR} />;
+};
 ```
 
 ## API
@@ -63,6 +74,8 @@ Opens the system AR viewer for the given model. The promise **resolves when
 the viewer is on screen**. It does not tell you when the user closes the
 viewer: Scene Viewer runs in a separate Android activity and returns no
 result, so a reliable cross-platform close event is not possible.
+Before opening, the function checks `isARAvailable()` and rejects with
+`E_AR_UNAVAILABLE` when AR preview is unavailable.
 
 ```ts
 type ModelSource =
@@ -134,11 +147,16 @@ call stays cross-platform. An invalid option value (for example a non-HTTPS
 > library will not embed a WebView to fake it. If you need that banner, use
 > [`<model-viewer>`](https://modelviewer.dev) on your website.
 
-### `isARAvailable(): Promise<boolean>`
+### `isARAvailable(): boolean`
 
 - **iOS** - whether the device supports ARKit world tracking.
-- **Android** - whether the Scene Viewer intent can be resolved.
+- **Android** - whether this is a physical device and the Scene Viewer intent can be resolved.
 - Any other platform - `false`.
+
+### `useIsARAvailable(): boolean`
+
+Returns `isARAvailable()`, checked once when the component mounts. A failed
+availability check returns `false`.
 
 ### `ErrorCodes`
 
@@ -149,7 +167,7 @@ Rejections carry a `code` property with one of these stable values:
 | `E_INVALID_SOURCE`  | The source has no format for the current platform, or the `glb` URL is not HTTPS on Android.                                     |
 | `E_INVALID_OPTIONS` | An option value is invalid - today: a `link` that is not an `https://` URL.                                                      |
 | `E_DOWNLOAD_FAILED` | iOS could not download a valid USDZ file (network error, non-2xx status, or the response is not a USDZ archive). Nothing is cached. |
-| `E_AR_UNAVAILABLE`  | The device has no system AR viewer, or the platform is not supported.                                                            |
+| `E_AR_UNAVAILABLE`  | AR preview is unavailable, the app runs on a simulator or emulator, or the platform is not supported.                           |
 | `E_LAUNCH_FAILED`   | The viewer could not be opened for another reason.                                                                               |
 
 ## Model formats

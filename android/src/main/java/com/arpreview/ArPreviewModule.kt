@@ -26,9 +26,7 @@ class ArPreviewModule(reactContext: ReactApplicationContext) :
     super.invalidate()
   }
 
-  override fun isARAvailable(promise: Promise) {
-    promise.resolve(launcher.isAvailable())
-  }
+  override fun isARAvailable(): Boolean = launcher.isAvailable()
 
   override fun openAR(url: String, scale: String?, link: String?, promise: Promise) {
     launcher.launch(

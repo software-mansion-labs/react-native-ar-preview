@@ -6,13 +6,13 @@ jest.mock('../NativeArPreview');
 
 const mockIsARAvailable = jest.mocked(NativeArPreview.isARAvailable);
 
-const renderAvailabilityValues = async () => {
-  const values: Array<boolean | null> = [];
+const renderAvailabilityValues = () => {
+  const values: boolean[] = [];
   const Probe = () => {
     values.push(useIsARAvailable());
     return null;
   };
-  await act(async () => {
+  act(() => {
     create(<Probe />);
   });
   return values;
@@ -23,16 +23,18 @@ beforeEach(() => {
 });
 
 describe('useIsARAvailable', () => {
-  it('returns null while checking and then the resolved availability', async () => {
-    mockIsARAvailable.mockResolvedValue(true);
+  it('returns the availability synchronously on the first render', () => {
+    mockIsARAvailable.mockReturnValue(true);
 
-    await expect(renderAvailabilityValues()).resolves.toEqual([null, true]);
+    expect(renderAvailabilityValues()).toEqual([true]);
     expect(mockIsARAvailable).toHaveBeenCalledTimes(1);
   });
 
-  it('resolves to false when the availability check rejects', async () => {
-    mockIsARAvailable.mockRejectedValue(new Error('Native failure'));
+  it('returns false when the availability check throws', () => {
+    mockIsARAvailable.mockImplementation(() => {
+      throw new Error('Native failure');
+    });
 
-    await expect(renderAvailabilityValues()).resolves.toEqual([null, false]);
+    expect(renderAvailabilityValues()).toEqual([false]);
   });
 });

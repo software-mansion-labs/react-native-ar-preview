@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Platform } from 'react-native';
 import NativeArPreview from './NativeArPreview';
 
@@ -138,7 +138,7 @@ export const openAR = async (
   source: ModelSource,
   options?: ViewerOptions
 ): Promise<void> => {
-  if (!(await isARAvailable())) {
+  if (!isARAvailable()) {
     throw errorWithCode(
       ErrorCodes.AR_UNAVAILABLE,
       `AR preview is not available on ${Platform.OS}`
@@ -161,37 +161,21 @@ export const openAR = async (
  *
  * Use it to hide the AR button when AR is not available.
  */
-export const isARAvailable = (): Promise<boolean> => {
+export const isARAvailable = (): boolean => {
   if (Platform.OS !== 'ios' && Platform.OS !== 'android') {
-    return Promise.resolve(false);
+    return false;
   }
   return NativeArPreview.isARAvailable();
 };
 
-export const useIsARAvailable = (): boolean | null => {
-  const [available, setAvailable] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    let active = true;
-
-    const check = async () => {
-      let value: boolean;
-      try {
-        value = await isARAvailable();
-      } catch {
-        value = false;
-      }
-      if (active) {
-        setAvailable(value);
-      }
-    };
-
-    check();
-
-    return () => {
-      active = false;
-    };
-  }, []);
+export const useIsARAvailable = (): boolean => {
+  const [available] = useState(() => {
+    try {
+      return isARAvailable();
+    } catch {
+      return false;
+    }
+  });
 
   return available;
 };

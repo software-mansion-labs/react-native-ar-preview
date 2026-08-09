@@ -20,10 +20,9 @@
   return self;
 }
 
-- (void)isARAvailable:(RCTPromiseResolveBlock)resolve
-               reject:(RCTPromiseRejectBlock)reject
+- (NSNumber *)isARAvailable
 {
-  resolve(@([_impl isARAvailable]));
+  return @([_impl isARAvailable]);
 }
 
 - (void)openAR:(NSString *)url

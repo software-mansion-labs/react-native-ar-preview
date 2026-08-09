@@ -14,7 +14,7 @@ const setPlatform = (os: typeof Platform.OS) => {
 beforeEach(() => {
   jest.clearAllMocks();
   mockOpenAR.mockResolvedValue(undefined);
-  mockIsARAvailable.mockResolvedValue(true);
+  mockIsARAvailable.mockReturnValue(true);
 });
 
 describe('openAR on iOS', () => {
@@ -185,7 +185,7 @@ describe('openAR on unsupported platforms', () => {
 describe('openAR availability guard', () => {
   it('rejects with E_AR_UNAVAILABLE before opening the native viewer', async () => {
     setPlatform('ios');
-    mockIsARAvailable.mockResolvedValue(false);
+    mockIsARAvailable.mockReturnValue(false);
 
     await expect(
       openAR({ usdz: 'https://example.com/model.usdz' })
@@ -196,15 +196,15 @@ describe('openAR availability guard', () => {
 });
 
 describe('isARAvailable', () => {
-  it('delegates to the native module on ios', async () => {
+  it('delegates to the native module on ios', () => {
     setPlatform('ios');
-    await expect(isARAvailable()).resolves.toBe(true);
+    expect(isARAvailable()).toBe(true);
     expect(mockIsARAvailable).toHaveBeenCalled();
   });
 
-  it('resolves false on unsupported platforms without calling native', async () => {
+  it('returns false on unsupported platforms without calling native', () => {
     setPlatform('web');
-    await expect(isARAvailable()).resolves.toBe(false);
+    expect(isARAvailable()).toBe(false);
     expect(mockIsARAvailable).not.toHaveBeenCalled();
   });
 });
