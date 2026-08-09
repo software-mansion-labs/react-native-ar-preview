@@ -137,11 +137,6 @@ call stays cross-platform. An invalid option value (for example a non-HTTPS
 - **Android** - whether this is a physical device and the Scene Viewer intent can be resolved.
 - Any other platform - `false`.
 
-### `useIsARAvailable(): boolean`
-
-Returns `isARAvailable()`, checked once when the component mounts. A failed
-availability check returns `false`.
-
 ### `ErrorCodes`
 
 Rejections carry a `code` property with one of these stable values:

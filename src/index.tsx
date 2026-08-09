@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Platform } from 'react-native';
 import NativeArPreview from './NativeArPreview';
 
@@ -165,16 +164,4 @@ export const isARAvailable = (): boolean => {
     return false;
   }
   return NativeArPreview.isARAvailable();
-};
-
-export const useIsARAvailable = (): boolean => {
-  const [available] = useState(() => {
-    try {
-      return isARAvailable();
-    } catch {
-      return false;
-    }
-  });
-
-  return available;
 };
