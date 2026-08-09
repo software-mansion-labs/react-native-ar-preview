@@ -1,17 +1,11 @@
 import { Platform } from 'react-native';
-
-const mockOpenAR = jest.fn<Promise<void>, [string, string?, string?]>();
-const mockIsARAvailable = jest.fn<Promise<boolean>, []>();
-
-jest.mock('../NativeArPreview', () => ({
-  __esModule: true,
-  default: {
-    openAR: (...args: [string, string?, string?]) => mockOpenAR(...args),
-    isARAvailable: () => mockIsARAvailable(),
-  },
-}));
-
+import NativeArPreview from '../NativeArPreview';
 import { ErrorCodes, isARAvailable, openAR } from '../index';
+
+jest.mock('../NativeArPreview');
+
+const mockOpenAR = jest.mocked(NativeArPreview.openAR);
+const mockIsARAvailable = jest.mocked(NativeArPreview.isARAvailable);
 
 const setPlatform = (os: typeof Platform.OS) => {
   Object.defineProperty(Platform, 'OS', { get: () => os });
@@ -184,6 +178,19 @@ describe('openAR on unsupported platforms', () => {
         glb: 'https://example.com/model.glb',
       })
     ).rejects.toMatchObject({ code: ErrorCodes.AR_UNAVAILABLE });
+    expect(mockOpenAR).not.toHaveBeenCalled();
+  });
+});
+
+describe('openAR availability guard', () => {
+  it('rejects with E_AR_UNAVAILABLE before opening the native viewer', async () => {
+    setPlatform('ios');
+    mockIsARAvailable.mockResolvedValue(false);
+
+    await expect(
+      openAR({ usdz: 'https://example.com/model.usdz' })
+    ).rejects.toMatchObject({ code: ErrorCodes.AR_UNAVAILABLE });
+    expect(mockIsARAvailable).toHaveBeenCalledTimes(1);
     expect(mockOpenAR).not.toHaveBeenCalled();
   });
 });

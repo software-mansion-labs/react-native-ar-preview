@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 import NativeArPreview from './NativeArPreview';
 
@@ -66,16 +67,16 @@ export const ErrorCodes = {
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];
 
-const rejectWithCode = (code: ErrorCode, message: string): Promise<never> => {
+const errorWithCode = (code: ErrorCode, message: string): Error => {
   const error = new Error(message) as Error & { code: ErrorCode };
   error.code = code;
-  return Promise.reject(error);
+  return error;
 };
 
-const selectUrl = (source: ModelSource): Promise<string> => {
+const selectUrl = (source: ModelSource): string => {
   if (Platform.OS === 'ios') {
     if (!source.usdz) {
-      return rejectWithCode(
+      throw errorWithCode(
         ErrorCodes.INVALID_SOURCE,
         'iOS requires a `usdz` url in the model source'
       );
@@ -84,42 +85,42 @@ const selectUrl = (source: ModelSource): Promise<string> => {
       !source.usdz.startsWith('https://') &&
       !source.usdz.startsWith('file://')
     ) {
-      return rejectWithCode(
+      throw errorWithCode(
         ErrorCodes.INVALID_SOURCE,
         'The `usdz` url must use the https or file scheme'
       );
     }
-    return Promise.resolve(source.usdz);
+    return source.usdz;
   }
   if (Platform.OS === 'android') {
     if (!source.glb) {
-      return rejectWithCode(
+      throw errorWithCode(
         ErrorCodes.INVALID_SOURCE,
         'Android requires a `glb` url in the model source'
       );
     }
     if (!source.glb.startsWith('https://')) {
-      return rejectWithCode(
+      throw errorWithCode(
         ErrorCodes.INVALID_SOURCE,
         'Scene Viewer requires the `glb` url to be served over https'
       );
     }
-    return Promise.resolve(source.glb);
+    return source.glb;
   }
-  return rejectWithCode(
+  throw errorWithCode(
     ErrorCodes.AR_UNAVAILABLE,
     `AR preview is not available on ${Platform.OS}`
   );
 };
 
-const validateOptions = (options: ViewerOptions): Promise<ViewerOptions> => {
+const validateOptions = (options: ViewerOptions): ViewerOptions => {
   if (options.link !== undefined && !options.link.startsWith('https://')) {
-    return rejectWithCode(
+    throw errorWithCode(
       ErrorCodes.INVALID_OPTIONS,
       `The \`link\` option must be an https url, got: ${options.link}`
     );
   }
-  return Promise.resolve(options);
+  return options;
 };
 
 /**
@@ -133,18 +134,23 @@ const validateOptions = (options: ViewerOptions): Promise<ViewerOptions> => {
  * away and does nothing. Rejects with an `Error` that carries a `code`
  * from {@link ErrorCodes}.
  */
-export const openAR = (
+export const openAR = async (
   source: ModelSource,
   options?: ViewerOptions
-): Promise<void> =>
-  selectUrl(source).then((url) => {
-    if (options === undefined) {
-      return NativeArPreview.openAR(url);
-    }
-    return validateOptions(options).then((validated) =>
-      NativeArPreview.openAR(url, validated.scale, validated.link)
+): Promise<void> => {
+  if (!(await isARAvailable())) {
+    throw errorWithCode(
+      ErrorCodes.AR_UNAVAILABLE,
+      `AR preview is not available on ${Platform.OS}`
     );
-  });
+  }
+  const url = selectUrl(source);
+  if (options === undefined) {
+    return NativeArPreview.openAR(url);
+  }
+  const { scale, link } = validateOptions(options);
+  return NativeArPreview.openAR(url, scale, link);
+};
 
 /**
  * Whether this device can show an AR preview.
@@ -160,4 +166,32 @@ export const isARAvailable = (): Promise<boolean> => {
     return Promise.resolve(false);
   }
   return NativeArPreview.isARAvailable();
+};
+
+export const useIsARAvailable = (): boolean | null => {
+  const [available, setAvailable] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let active = true;
+
+    const check = async () => {
+      let value: boolean;
+      try {
+        value = await isARAvailable();
+      } catch {
+        value = false;
+      }
+      if (active) {
+        setAvailable(value);
+      }
+    };
+
+    check();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  return available;
 };
